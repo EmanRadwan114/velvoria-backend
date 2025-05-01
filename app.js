@@ -32,7 +32,7 @@ app.use("/auth/users", userRouter);
 app.use("/auth/admins", adminRouter);
 app.use("/categories", categoryRouter);
 app.use("/coupons", couponRouter);
-app.use("/products", productRouter);
+app.use("/furnitures", productRouter);
 app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
 app.use("/reviews", reviewRouter);
