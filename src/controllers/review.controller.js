@@ -1,11 +1,11 @@
 import Review from "../../db/models/review.model.js";
 
-const addNewReview = (res, req) => {};
+const addNewReview = (req, res) => {};
 
-const getAllReviews = (res, req) => {};
+const getAllReviews = (req, res) => {};
 
-const updateReview = (res, req) => {}; // additional feature
+const updateReview = (req, res) => {}; // additional feature
 
-const deleteReview = (res, req) => {}; // additional feature
+const deleteReview = (req, res) => {}; // additional feature
 
 export default { addNewReview, getAllReviews, updateReview, deleteReview };

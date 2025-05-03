@@ -1,16 +1,16 @@
 import Cart from "../../db/models/cart.model.js";
 
-const addProductToCart = (res, req) => {};
+const addProductToCart = (req, res) => {};
 
-const getAllCarts = (res, req) => {};
+const getAllCarts = (req, res) => {};
 
-const getUserCart = (res, req) => {};
+const getUserCart = (req, res) => {};
 
-const updateCartItem = (res, req) => {};
+const updateCartItem = (req, res) => {};
 
-const deleteCartItem = (res, req) => {};
+const deleteCartItem = (req, res) => {};
 
-const clearCart = (res, req) => {};
+const clearCart = (req, res) => {};
 
 export default {
   addProductToCart,

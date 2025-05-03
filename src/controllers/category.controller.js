@@ -1,14 +1,14 @@
 import Category from "../../db/models/category.model.js";
 
-const addNewCategory = (res, req) => {};
+const addNewCategory = (req, res) => {};
 
-const getAllCategories = (res, req) => {};
+const getAllCategories = (req, res) => {};
 
-const getCategoryById = (res, req) => {};
+const getCategoryById = (req, res) => {};
 
-const updateCategory = (res, req) => {};
+const updateCategory = (req, res) => {};
 
-const deleteCategory = (res, req) => {};
+const deleteCategory = (req, res) => {};
 
 export default {
   addNewCategory,

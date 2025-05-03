@@ -1,14 +1,14 @@
 import Product from "../../db/models/product.model.js";
 
-const addNewProduct = (res, req) => {};
+const addNewProduct = (req, res) => {};
 
-const getAllProducts = (res, req) => {};
+const getAllProducts = (req, res) => {};
 
-const getProductById = (res, req) => {};
+const getProductById = (req, res) => {};
 
-const updateProduct = (res, req) => {};
+const updateProduct = (req, res) => {};
 
-const deleteProduct = (res, req) => {};
+const deleteProduct = (req, res) => {};
 
 export default {
   addNewProduct,

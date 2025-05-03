@@ -1,11 +1,11 @@
 import Order from "../../db/models/order.model.js";
 
-const addNewOrder = (res, req) => {};
+const addNewOrder = (req, res) => {};
 
-const getAllOrders = (res, req) => {};
+const getAllOrders = (req, res) => {};
 
-const getUserOrders = (res, req) => {};
+const getUserOrders = (req, res) => {};
 
-const cancelOrder = (res, req) => {}; //additional feature
+const cancelOrder = (req, res) => {}; //additional feature
 
 export default { addNewOrder, getAllOrders, getUserOrders, cancelOrder };
