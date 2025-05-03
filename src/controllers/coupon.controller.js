@@ -1,14 +1,14 @@
 import Coupon from "../../db/models/coupon.model.js";
 
-const addNewCoupon = (res, req) => {};
+const addNewCoupon = (req, res) => {};
 
-const getAllCoupons = (res, req) => {};
+const getAllCoupons = (req, res) => {};
 
-const getCouponById = (res, req) => {};
+const getCouponById = (req, res) => {};
 
-const updateCoupon = (res, req) => {};
+const updateCoupon = (req, res) => {};
 
-const deleteCoupon = (res, req) => {};
+const deleteCoupon = (req, res) => {};
 
 export default {
   addNewCoupon,

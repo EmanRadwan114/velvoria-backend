@@ -1,16 +1,16 @@
 import Admin from "../../db/models/admin.model.js";
 
-const addNewAdmin = (res, req) => {};
+const addNewAdmin = (req, res) => {};
 
-const loginAdmin = (res, req) => {};
+const loginAdmin = (req, res) => {};
 
-const getAllAdmins = (res, req) => {};
+const getAllAdmins = (req, res) => {};
 
-const getAdminById = (res, req) => {};
+const getAdminById = (req, res) => {};
 
-const updateAdmin = (res, req) => {};
+const updateAdmin = (req, res) => {};
 
-const deleteAdmin = (res, req) => {};
+const deleteAdmin = (req, res) => {};
 
 export default {
   addNewAdmin,

@@ -1,22 +1,22 @@
 import User from "../../db/models/user.model.js";
 
-const RegisterUser = (res, req) => {};
+const RegisterUser = (req, res) => {};
 
-const emailActivation = (res, req) => {};
+const emailActivation = (req, res) => {};
 
-const signIn = (res, req) => {};
+const signIn = (req, res) => {};
 
-const getAllUsers = (res, req) => {};
+const getAllUsers = (req, res) => {};
 
-const getUserById = (res, req) => {};
+const getUserById = (req, res) => {};
 
-const updateUser = (res, req) => {};
+const updateUser = (req, res) => {};
 
-const deleteUser = (res, req) => {};
+const deleteUser = (req, res) => {};
 
-const forgetPassword = (res, req) => {}; //additional feature
+const forgetPassword = (req, res) => {}; //additional feature
 
-const resetPassword = (res, req) => {}; //additional feature
+const resetPassword = (req, res) => {}; //additional feature
 
 export default {
   RegisterUser,
