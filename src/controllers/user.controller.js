@@ -1,6 +1,14 @@
 import User from "../../db/models/user.model.js";
 
-const RegisterUser = (res, req) => {};
+const RegisterUser = (req, res) => {
+  // try {
+  //   //* use case 1 ==> check if
+  // } catch (err) {
+  //   console.log(err);
+  // }
+
+  res.json("hi");
+};
 
 const emailActivation = (res, req) => {};
 

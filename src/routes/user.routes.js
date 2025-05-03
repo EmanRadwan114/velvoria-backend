@@ -6,4 +6,6 @@ import userValidation from "../validation/user.validation.js";
 
 const userRouter = new Router();
 
+userRouter.post("/register", isEmailExists, userControllers.RegisterUser);
+
 export default userRouter;
