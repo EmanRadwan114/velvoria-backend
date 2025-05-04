@@ -11,10 +11,7 @@ const generateAndSendActivationEmail = async (user) => {
     );
 
     //* Construct activation and refresh token links
-    const activationLink = `${process.env.BASE_URL}/auth/users/email-activation/${token}`;
-
-    //* Log the generated links for debugging
-    console.log("Activation Link:", activationLink);
+    const activationLink = `${process.env.BASE_URL}/auth/email-activation/${token}`;
 
     //* Send email with the links
     await sendEmail(user.email, activationLink);

@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import User from "../../db/models/user.model.js";
-import generateToken from "./../utils/generateToken.js";
+import generateToken from "../utils/generateToken.js";
 import verifyToken from "../utils/verifyToken.js";
 import generateAndSendActivationEmail from "../utils/emailActivation.js";
 

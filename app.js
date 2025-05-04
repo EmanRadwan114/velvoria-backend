@@ -5,7 +5,7 @@ import db from "./db/dbConnection.js";
 import express from "express";
 import cors from "cors";
 import globalErrHandler from "./src/middlewares/globalErrHandler.middleware.js";
-import userRouter from "./src/routes/user.routes.js";
+import authRouter from "./src/routes/auth.routes.js";
 import categoryRouter from "./src/routes/category.routes.js";
 import couponRouter from "./src/routes/coupon.routes.js";
 import productRouter from "./src/routes/product.routes.js";
@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // ^------------------main routes
-app.use("/auth/users", userRouter);
+app.use("/auth", authRouter);
 app.use("/categories", categoryRouter);
 app.use("/coupons", couponRouter);
 app.use("/furnitures", productRouter);
