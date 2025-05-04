@@ -7,8 +7,19 @@ const userSchema = new Schema(
       type: String,
       required: [true, "email is required"],
       unique: true,
+      match: [
+        /^[\w.-]+@([\w-]+\.)+[a-zA-Z]{2,}$/,
+        "please provide a valid email address",
+      ],
     },
-    password: { type: String, required: [true, "password is required"] },
+    password: {
+      type: String,
+      required: [true, "password is required"],
+      match: [
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@_$-])[A-Za-z\d@_$-]{8,}$/,
+        "please provide a valid password",
+      ],
+    },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     wishlist: [
       {

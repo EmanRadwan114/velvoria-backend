@@ -29,8 +29,17 @@ const addUserSchema = {
 const loginUserSchema = {
   type: "object",
   properties: {
-    email: { type: "string", format: "email" },
-    password: { type: "string" },
+    email: {
+      type: "string",
+      format: "email",
+      pattern: "^[\\w.-]+@([\\w-]+\\.)+[a-zA-Z]{2,}$",
+    },
+
+    password: {
+      type: "string",
+      pattern:
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@_$-])[A-Za-z\\d@_$-]{8,}$",
+    },
   },
   required: ["email", "password"],
   additionalProperties: false,
