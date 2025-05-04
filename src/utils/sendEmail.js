@@ -41,6 +41,7 @@ const getHTMLContent = (activationLink) => `<!DOCTYPE html>
       color: #fff;
       text-decoration: none;
       border-radius: 5px;
+      margin-bottom:10px;
     }
     .footer {
       margin-top: 30px;
@@ -52,11 +53,11 @@ const getHTMLContent = (activationLink) => `<!DOCTYPE html>
 <body>
   <div class="container">
     <div class="header">
-      <img src="https://i.imgur.com/xmLPDgh.png" alt="Activate Your Account">
+      <img src="https://i.imgur.com/xmLPDgh.png" alt="Activate Your Email">
     </div>
     <h2>Welcome to VELVORIA!</h2>
-    <p>Thanks for signing up. Please confirm your email address to activate your account.</p>
-    <a href="${activationLink}" class="btn">Activate Account</a>
+    <p>Thanks for signing up. Please confirm your email address to activate your email.</p>
+    <a href="${activationLink}" target="_blank" class="btn">Activate Email</a>
     <p class="footer">If you didn’t sign up, please ignore this email.</p>
   </div>
 </body>
@@ -80,7 +81,6 @@ const sendEmail = async (to, activationLink) => {
       subject: "Email Activation",
       html: getHTMLContent(activationLink),
     });
-    console.log(`Activation email sent to ${to}`);
   } catch (error) {
     console.error("Error sending email:", error);
   }

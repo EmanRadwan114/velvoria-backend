@@ -1,10 +1,8 @@
 import bcrypt from "bcrypt";
 import User from "../../db/models/user.model.js";
 import generateToken from "./../utils/generateToken.js";
-import sendEmail from "../utils/sendEmail.js";
 import verifyToken from "../utils/verifyToken.js";
-
-const baseURL = process.env.BASE_URL;
+import generateAndSendActivationEmail from "../utils/emailActivation.js";
 
 // ^----------------------------------Registeration--------------------------
 const RegisterUser = async (req, res) => {
@@ -29,22 +27,17 @@ const RegisterUser = async (req, res) => {
 
     //* 3- save in db
     const newUser = new User({ ...req.body, password: hashedPassword });
+
     await newUser.save();
 
-    //* 4- generate token for email activation
-    const token = generateToken(
-      { id: newUser._id },
-      process.env.EMAIL_ACTIVATION_TOKEN_SECRET_KEY
-    );
-
-    //* 5- email activation
-    const link = `${baseURL}/auth/users/email-activation/${token}`;
-    sendEmail(newUser.email, link);
+    //* 4- generate token for email activation & token for generating new link
+    generateAndSendActivationEmail(newUser);
 
     //* 6- send success msg
     res.status(201).json({
-      message: "user registered successfully",
-      data: {
+      message:
+        "user registered successfully. we have sent an email activation link to your email.",
+      user: {
         id: newUser._id,
         name,
         email,
@@ -69,22 +62,37 @@ const RegisterUser = async (req, res) => {
 
 // ^----------------------------------Email Activation--------------------------
 const emailActivation = async (req, res) => {
-  const { token } = req.params;
+  try {
+    //* 1- get token and verify it
+    const { token } = req.params;
 
-  const decoded = verifyToken(
-    token,
-    process.env.EMAIL_ACTIVATION_TOKEN_SECRET_KEY
-  );
+    const decoded = verifyToken(
+      token,
+      process.env.EMAIL_ACTIVATION_TOKEN_SECRET_KEY
+    );
 
-  const user = await User.findById({ _id: decoded.id });
-  console.log(user);
+    //* 2- get the user and activate their email
+    const user = await User.findById({ _id: decoded.id });
 
-  if (!user.isEmailActive) {
-    user.isEmailActive = true;
-    await user.save();
+    if (user && !user.isEmailActive) {
+      user.isEmailActive = true;
+      await user.save();
+
+      //* 3- redirect user to the login form
+      return res
+        .status(302)
+        .redirect(`${process.env.FRONT_URL}/login/${user.role}`);
+    } else if (user && user.isEmailActive) {
+      return res.status(409).json({ message: "Email is already activated" });
+    } else {
+      return res.status(400).json({ message: "User token is invalid" });
+    }
+  } catch (err) {
+    //* 4- handle expired or invalid token
+    return res.status(401).json({
+      message: "Activation link has expired. Please request a new one.",
+    });
   }
-
-  res.status(200).json({ message: "email is activated successfully", user });
 };
 
 // ^----------------------------------Login--------------------------
@@ -102,6 +110,12 @@ const signIn = async (req, res) => {
       return res.status(400).json({ message: "email does not exist" });
     }
 
+    if (!user.isEmailActive)
+      return res.status(400).json({
+        message:
+          "your email is not active. you can activate it using the activation link sent to your email",
+      });
+
     //* 2- check if password is correct or not
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
@@ -111,7 +125,8 @@ const signIn = async (req, res) => {
     //* 3- generate user token
     const token = generateToken(
       { email: user.email, id: user._id, role: user.role },
-      process.env.USER_TOKEN_SECRET_KEY
+      process.env.USER_TOKEN_SECRET_KEY,
+      "7d"
     );
 
     //* 4- send token in http-only cookie to prevent js access
@@ -122,7 +137,16 @@ const signIn = async (req, res) => {
     });
 
     //* 4- send success msg
-    res.status(200).json({ message: "successful login" });
+    res.status(200).json({
+      message: "successful login",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isEmailActive: user.isEmailActive,
+        role: user.role,
+      },
+    });
   } catch (err) {
     if (err.name === "ValidationError") {
       const errors = {};
