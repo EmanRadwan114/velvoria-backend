@@ -2,9 +2,13 @@ import { Schema, model, Types } from "mongoose";
 
 const userSchema = new Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    name: { type: String, required: [true, "name is required"] },
+    email: {
+      type: String,
+      required: [true, "email is required"],
+      unique: true,
+    },
+    password: { type: String, required: [true, "password is required"] },
     role: { type: String, default: "user" },
     wishlist: [{ type: Types.ObjectId, ref: "Product" }],
     isEmailActive: { type: Boolean, default: false },
@@ -15,7 +19,7 @@ const userSchema = new Schema(
     },
     address: [{ type: String }],
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
 
 const User = model("User", userSchema);

@@ -7,7 +7,7 @@ const reviewSchema = new Schema(
     description: { type: String },
     rating: { type: Number, min: 1, max: 5 },
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
 
 const Review = model("Review", reviewSchema);
