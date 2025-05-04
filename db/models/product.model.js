@@ -16,7 +16,7 @@ const productSchema = new Schema(
     label: [{ type: String }],
     orderCount: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
 
 const Product = model("Product", productSchema);

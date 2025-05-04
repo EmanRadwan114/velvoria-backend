@@ -9,7 +9,7 @@ const couponSchema = new Schema(
     maxUsageLimit: { type: Number, required: true },
     isActive: { type: Boolean, default: true },
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
 
 const Coupon = model("Coupon", couponSchema);

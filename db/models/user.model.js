@@ -2,11 +2,20 @@ import { Schema, model, Types } from "mongoose";
 
 const userSchema = new Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, default: "user" },
-    wishlist: [{ type: Types.ObjectId, ref: "Product" }],
+    name: { type: String, required: [true, "name is required"] },
+    email: {
+      type: String,
+      required: [true, "email is required"],
+      unique: true,
+    },
+    password: { type: String, required: [true, "password is required"] },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
+    wishlist: [
+      {
+        type: Types.ObjectId,
+        ref: "Product",
+      },
+    ],
     isEmailActive: { type: Boolean, default: false },
     image: {
       type: String,
@@ -15,8 +24,24 @@ const userSchema = new Schema(
     },
     address: [{ type: String }],
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
+
+//*Role-based wishlist validation
+userSchema.path("wishlist").validate(function (value) {
+  if (this.role === "admin" && value.length > 0) {
+    return false;
+  }
+  return true;
+}, "Admins cannot have a wishlist");
+
+//*Role-based address validation
+userSchema.path("address").validate(function (value) {
+  if (this.role === "admin" && value.length > 0) {
+    return false;
+  }
+  return true;
+}, "Admins cannot have an address");
 
 const User = model("User", userSchema);
 export default User;

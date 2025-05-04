@@ -12,7 +12,6 @@ import productRouter from "./src/routes/product.routes.js";
 import cartRouter from "./src/routes/cart.routes.js";
 import orderRouter from "./src/routes/order.routes.js";
 import reviewRouter from "./src/routes/review.routes.js";
-import adminRouter from "./src/routes/admin.routes.js";
 
 const PORT = process.env.PORT || 7500;
 
@@ -30,7 +29,6 @@ app.use(express.json());
 
 // ^------------------main routes
 app.use("/auth/users", userRouter);
-app.use("/auth/admins", adminRouter);
 app.use("/categories", categoryRouter);
 app.use("/coupons", couponRouter);
 app.use("/furnitures", productRouter);
