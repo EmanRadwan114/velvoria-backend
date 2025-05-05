@@ -38,8 +38,8 @@ const getHTMLContent = (activationLink) => `<!DOCTYPE html>
       margin-top: 20px;
       padding: 7px 30px;
       background-color: #0B5D5D;
-      color: #fff;
-      text-decoration: none;
+      color: #fff !important;
+      text-decoration: none !important;
       border-radius: 5px;
       margin-bottom:10px;
     }

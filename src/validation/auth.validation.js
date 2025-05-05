@@ -9,18 +9,23 @@ ajvFormats(ajv); // Add support for formats like 'email', 'date', etc.
 const addUserSchema = {
   type: "object",
   properties: {
-    name: { type: "string" },
+    name: {
+      type: "string",
+      minLength: 3,
+    },
     email: {
       type: "string",
       format: "email",
-      pattern: "^[\\w.-]+@([\\w-]+\\.)+[a-zA-Z]{2,}$",
     },
     password: {
       type: "string",
       pattern:
         "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@_$-])[A-Za-z\\d@_$-]{8,}$",
     },
-    role: { type: "string", enum: ["user", "admin"] },
+    role: {
+      type: "string",
+      enum: ["user", "admin"],
+    },
   },
   required: ["name", "email", "password"],
   additionalProperties: false,
@@ -29,6 +34,13 @@ const addUserSchema = {
       name: "name is required.",
       email: "email is required.",
       password: "password is required.",
+    },
+    properties: {
+      name: "name must be at least 3 characters.",
+      email: "please enter a valid email address.",
+      password:
+        "password must be at least 8 characters, with uppercase, lowercase, number, and special character.",
+      role: "role must be either 'user' or 'admin'.",
     },
     additionalProperties: "unexpected extra property in request body.",
   },
@@ -40,9 +52,7 @@ const loginUserSchema = {
     email: {
       type: "string",
       format: "email",
-      pattern: "^[\\w.-]+@([\\w-]+\\.)+[a-zA-Z]{2,}$",
     },
-
     password: {
       type: "string",
       pattern:
@@ -55,6 +65,11 @@ const loginUserSchema = {
     required: {
       email: "email is required.",
       password: "password is required.",
+    },
+    properties: {
+      email: "please enter a valid email address.",
+      password:
+        "password must be at least 8 characters, with uppercase, lowercase, number, and special character.",
     },
     additionalProperties: "unexpected extra property in request body.",
   },

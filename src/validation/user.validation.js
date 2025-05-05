@@ -9,18 +9,44 @@ ajvFormats(ajv); // Add support for formats like 'email', 'date', etc.
 const updateUserSchema = {
   type: "object",
   properties: {
-    name: { type: "string" },
-    email: { type: "string", format: "email" },
-    password: { type: "string" },
-    role: { type: "string", enum: ["user", "admin"] },
+    oldPassword: {
+      type: "string",
+      pattern:
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@_$-])[A-Za-z\\d@_$-]{8,}$",
+    },
+    newPassword: {
+      type: "string",
+      pattern:
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@_$-])[A-Za-z\\d@_$-]{8,}$",
+    },
+    email: {
+      type: "string",
+      format: "email",
+    },
+    address: {
+      type: "string",
+      minLength: 5,
+    },
+    name: {
+      type: "string",
+      minLength: 3,
+    },
+    image: {
+      type: "string",
+      format: "uri",
+    },
   },
-  required: ["name", "email", "password"],
   additionalProperties: false,
   errorMessage: {
-    required: {
-      name: "name is required.",
-      email: "email is required.",
-      password: "password is required.",
+    properties: {
+      oldPassword:
+        "password must be at least 8 characters, including uppercase, lowercase, a number, and a special character.",
+      newPassword:
+        "password must be at least 8 characters, including uppercase, lowercase, a number, and a special character.",
+      email: "please enter a valid email address.",
+      address: "address must be at least 5 characters.",
+      name: "name must be at least 3 characters.",
+      image: "image must be a valid URL.",
     },
     additionalProperties: "unexpected extra property in request body.",
   },

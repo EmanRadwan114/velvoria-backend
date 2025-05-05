@@ -30,7 +30,7 @@ const RegisterUser = async (req, res) => {
 
     await newUser.save();
 
-    //* 4- generate token for email activation & token for generating new link
+    //* 4- generate token for email activation
     generateAndSendActivationEmail(newUser);
 
     //* 6- send success msg
