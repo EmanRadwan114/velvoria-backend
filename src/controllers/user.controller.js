@@ -1,33 +1,134 @@
-import User from "./../../db/models/user.model";
+import generateAndSendActivationEmail from "../utils/emailActivation.js";
+import User from "./../../db/models/user.model.js";
+import bcrypt from "bcrypt";
 
 // ^----------------------------------Get All Users--------------------------
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find().select(
+      "name email role wishlist image address"
+    );
+
+    if (users.length === 0)
+      return res.status(404).json({ message: "no users found" });
+
+    res.status(200).json({ message: "success", data: users });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
 };
 
-// ^----------------------------------Get User By ID--------------------------
-const getUserById = async (req, res) => {
+// ^---------------------------Get User (ID in Params / ID in Token)------------------------
+const getUser = async (userID, res) => {
   try {
+    if (!userID)
+      return res
+        .status(401)
+        .json({ message: "you are not authorized to get this content" });
+
+    const user = await User.findById(userID).select(
+      "-createdAt -updatedAt -password -isEmailActive"
+    );
+
+    if (!user) return res.status(404).json({ message: "user is not found" });
+
+    res.status(200).json({ message: "success", data: user });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
 };
 
-// ^----------------------------------Update User By ID--------------------------
-const updateUser = (req, res) => async (req, res) => {
+// ^-----------------------------Update User (ID in Params / ID in Token)-----------------------
+const updateUser = async (req, res, userID) => {
   try {
+    if (!userID)
+      return res
+        .status(401)
+        .json({ message: "you are not authorized to get this content" });
+
+    const { oldPassword, newPassword, email, address, name, image } = req.body;
+
+    const user = await User.findById(userID);
+
+    if (!user) return res.status(404).json({ message: "user is not found" });
+
+    // * change password
+    if (oldPassword && newPassword) {
+      const isPasswordCorrect = await bcrypt.compare(
+        oldPassword,
+        user.password
+      );
+
+      if (!isPasswordCorrect)
+        return res.status(401).json({ message: "incorrect password" });
+
+      user.password = await bcrypt.hash(
+        newPassword,
+        +process.env.USER_PASS_SALT_ROUNDS
+      );
+    }
+
+    // * change name
+    if (name && name !== user.name) {
+      user.name = name;
+    }
+
+    // * change image
+    if (image && image !== user.image) {
+      user.image = image;
+    }
+
+    // * change address (if new and not already exists)
+    if (address && user.role == "admin")
+      return res.status(400).json({ message: "admin cannot have address" });
+    else if (
+      address &&
+      user.role !== "admin" &&
+      !user.address.includes(address)
+    ) {
+      user.address.push(address);
+    }
+
+    // * change email
+    if (email && email !== user.email) {
+      user.email = email;
+      user.isEmailActive = false;
+      await user.save(); //? save before redirecting
+      generateAndSendActivationEmail(user);
+      return res
+        .status(302)
+        .redirect(`${process.env.FRONT_URL}/login/${user.role}`);
+    }
+
+    await user.save();
+
+    const updatedUser = await User.findById(userID).select(
+      "-createdAt -updatedAt -password -isEmailActive"
+    );
+
+    res
+      .status(200)
+      .json({ message: "user is updated successfully", data: updatedUser });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
 };
 
-// ^----------------------------------Delete User By ID--------------------------
-const deleteUser = (req, res) => async (req, res) => {
+// ^-------------------------Delete User (ID in Params / ID in Token)------------------------
+const deleteUser = async (userID, res) => {
   try {
+    if (!userID)
+      return res
+        .status(401)
+        .json({ message: "you are not authorized to get this content" });
+
+    const user = await User.findByIdAndDelete(userID).select("name email role");
+
+    if (!user) return res.status(404).json({ message: "user is not found" });
+
+    res
+      .status(200)
+      .json({ message: "user is deleted successfully", data: user });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -35,7 +136,7 @@ const deleteUser = (req, res) => async (req, res) => {
 
 export default {
   getAllUsers,
-  getUserById,
+  getUser,
   updateUser,
   deleteUser,
 };

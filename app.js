@@ -4,6 +4,8 @@ import "dotenv/config";
 import db from "./db/dbConnection.js";
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+
 import globalErrHandler from "./src/middlewares/globalErrHandler.middleware.js";
 import authRouter from "./src/routes/auth.routes.js";
 import categoryRouter from "./src/routes/category.routes.js";
@@ -12,6 +14,7 @@ import productRouter from "./src/routes/product.routes.js";
 import cartRouter from "./src/routes/cart.routes.js";
 import orderRouter from "./src/routes/order.routes.js";
 import reviewRouter from "./src/routes/review.routes.js";
+import userRouter from "./src/routes/user.routes.js";
 
 const PORT = process.env.PORT || 7500;
 
@@ -21,6 +24,8 @@ const app = express();
 // ^------------------global middlewares
 app.use(cors());
 
+app.use(cookieParser());
+
 // ?handle form submissions (application/x-www-form-urlencoded)
 app.use(express.urlencoded({ extended: true }));
 
@@ -29,6 +34,7 @@ app.use(express.json());
 
 // ^------------------main routes
 app.use("/auth", authRouter);
+app.use("/users", userRouter);
 app.use("/categories", categoryRouter);
 app.use("/coupons", couponRouter);
 app.use("/furnitures", productRouter);
