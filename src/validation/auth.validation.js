@@ -10,8 +10,16 @@ const addUserSchema = {
   type: "object",
   properties: {
     name: { type: "string" },
-    email: { type: "string", format: "email" },
-    password: { type: "string" },
+    email: {
+      type: "string",
+      format: "email",
+      pattern: "^[\\w.-]+@([\\w-]+\\.)+[a-zA-Z]{2,}$",
+    },
+    password: {
+      type: "string",
+      pattern:
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@_$-])[A-Za-z\\d@_$-]{8,}$",
+    },
     role: { type: "string", enum: ["user", "admin"] },
   },
   required: ["name", "email", "password"],
@@ -52,10 +60,7 @@ const loginUserSchema = {
   },
 };
 
-const updateUserSchema = {};
-
 const addUserValidation = ajv.compile(addUserSchema);
 const loginUserValidation = ajv.compile(loginUserSchema);
-const updateUserValidation = ajv.compile(updateUserSchema);
 
-export default { addUserValidation, updateUserValidation, loginUserValidation };
+export default { addUserValidation, loginUserValidation };

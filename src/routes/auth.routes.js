@@ -1,7 +1,7 @@
 // ^--------------------Imports
 import { Router } from "express";
 import userControllers from "../controllers/auth.controller.js";
-import userValidation from "../validation/auth.validation.js";
+import authValidation from "../validation/auth.validation.js";
 import validateRequestBody from "../middlewares/schemaValidation.middleware.js";
 
 const authRouter = new Router();
@@ -9,7 +9,7 @@ const authRouter = new Router();
 //* user registeration
 authRouter.post(
   "/register",
-  validateRequestBody(userValidation.addUserValidation),
+  validateRequestBody(authValidation.addUserValidation),
   userControllers.RegisterUser
 );
 
@@ -19,7 +19,7 @@ authRouter.get("/email-activation/:token", userControllers.emailActivation);
 //* user login
 authRouter.post(
   "/login",
-  validateRequestBody(userValidation.loginUserValidation),
+  validateRequestBody(authValidation.loginUserValidation),
   userControllers.signIn
 );
 
