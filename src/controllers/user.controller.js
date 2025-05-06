@@ -1,4 +1,5 @@
 import generateAndSendActivationEmail from "../utils/emailActivation.js";
+import generateToken from "../utils/generateToken.js";
 import User from "./../../db/models/user.model.js";
 import bcrypt from "bcrypt";
 
@@ -115,7 +116,7 @@ const updateUser = async (req, res, userID) => {
 };
 
 // ^-------------------------Delete User (ID in Params / ID in Token)------------------------
-const deleteUser = async (userID, res) => {
+const deleteUser = async (req, res, userID) => {
   try {
     if (!userID)
       return res
@@ -125,6 +126,20 @@ const deleteUser = async (userID, res) => {
     const user = await User.findByIdAndDelete(userID).select("name email role");
 
     if (!user) return res.status(404).json({ message: "user is not found" });
+
+    if (req.user.id == user.id) {
+      const token = generateToken(
+        { id: user.id },
+        process.env.USER_TOKEN_SECRET_KEY,
+        "5s"
+      );
+
+      res.cookie("token", token, {
+        httpOnly: true,
+        // secure: process.env.NODE_ENV === 'production',
+        expires: new Date(Date.now() + 3 * 1000), //? expires in 3 seconds
+      });
+    }
 
     res
       .status(200)

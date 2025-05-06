@@ -28,7 +28,7 @@ userRouter
     }
   )
   .delete(authenticate(Object.values(systemRoles)), (req, res) => {
-    userControllers.deleteUser(req.user.id, res);
+    userControllers.deleteUser(req, res, req.user.id);
   });
 
 //* get & delete user by id ==> admin only
@@ -38,7 +38,7 @@ userRouter
     userControllers.getUser(req.params.id, res);
   })
   .delete(authenticate([systemRoles.admin]), (req, res) => {
-    userControllers.deleteUser(req.params.id, res);
+    userControllers.deleteUser(req, res, req.params.id);
   });
 
 export default userRouter;

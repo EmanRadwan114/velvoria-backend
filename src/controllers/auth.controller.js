@@ -165,10 +165,34 @@ const forgetPassword = (req, res) => {}; //additional feature
 
 const resetPassword = (req, res) => {}; //additional feature
 
+// ^----------------------------------LogOut--------------------------
+const logOut = async (req, res) => {
+  const id = req.user.id;
+
+  const user = await User.findById(id).select("name email role");
+
+  const token = generateToken(
+    { id: user.id },
+    process.env.USER_TOKEN_SECRET_KEY,
+    "5s"
+  );
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    // secure: process.env.NODE_ENV === 'production',
+    expires: new Date(Date.now() + 3 * 1000), //? expires in 3 seconds
+  });
+
+  res
+    .status(200)
+    .json({ message: "user is logged out successfully", data: user });
+};
+
 export default {
   RegisterUser,
   emailActivation,
   signIn,
+  logOut,
   forgetPassword,
   resetPassword,
 };
