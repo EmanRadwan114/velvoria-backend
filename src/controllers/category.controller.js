@@ -6,8 +6,14 @@ import Product from "../../db/models/product.model.js";
 const addNewCategory = async (req, res) => {
   try {
     let { name, thumbnail } = req.body;
-    // check if duplicate name
-    const existing = await Category.findOne({ name });
+
+    const lowerCaseName = name.trim().toLowerCase();
+
+    // make sure name isn't duplicated
+    const existing = await Category.findOne({
+      name: { $regex: `^${lowerCaseName}$`, $options: "i" },
+    });
+
     if (existing) {
       return res.status(409).json({ message: "Category already exist" });
     }
