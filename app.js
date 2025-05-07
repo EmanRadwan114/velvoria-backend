@@ -15,6 +15,7 @@ import cartRouter from "./src/routes/cart.routes.js";
 import orderRouter from "./src/routes/order.routes.js";
 import reviewRouter from "./src/routes/review.routes.js";
 import userRouter from "./src/routes/user.routes.js";
+import wishlistRouter from "./src/routes/wishlist.routes.js";
 
 const PORT = process.env.PORT || 7500;
 
@@ -41,6 +42,7 @@ app.use("/furnitures", productRouter);
 app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
 app.use("/reviews", reviewRouter);
+app.use("/wishlist", wishlistRouter);
 
 // ^------------------error handling
 app.use((req, res, next) => {
