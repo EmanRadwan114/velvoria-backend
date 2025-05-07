@@ -37,7 +37,7 @@ app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/categories", categoryRouter);
 app.use("/coupons", couponRouter);
-app.use("/furnitures", productRouter);
+app.use("/products", productRouter);
 app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
 app.use("/reviews", reviewRouter);
