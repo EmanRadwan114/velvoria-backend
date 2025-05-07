@@ -19,13 +19,11 @@ categoryRouter.post(
 // get all categories
 categoryRouter.get(
   "/",
-  authenticate([systemRoles.admin, systemRoles.user]),
   categoryControllers.getAllCategories
 );
 // get category by id
 categoryRouter.get(
   "/:id",
-  authenticate([systemRoles.user, systemRoles.admin]),
   categoryControllers.getCategoryById
 );
 
