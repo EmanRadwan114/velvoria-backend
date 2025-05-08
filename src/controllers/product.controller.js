@@ -147,10 +147,6 @@ const filterProducts = async (req, res) => {
   try {
     const query = req.query;
 
-    console.log(query);
-
-    console.log(await Product.find({ material: req.query.material }));
-
     const filterQuery = {};
 
     if (query.material) {
