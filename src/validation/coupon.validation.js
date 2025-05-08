@@ -37,10 +37,9 @@ const updateCouponSchema = {
 const applyCouponSchema = {
   type: "object",
   properties: {
-    userId: { type: "string", minLength: 1 },
     couponCode: { type: "string", minLength: 1 },
   },
-  required: ["userId", "couponCode"],
+  required: ["couponCode"],
   additionalProperties: false,
 };
 

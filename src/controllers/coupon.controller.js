@@ -66,8 +66,8 @@ const deleteCoupon = async (req, res) => {
   }
 };
 
-const applyCoupon = async (req, res) => {
-  const { userId, couponCode } = req.body;
+const applyCoupon = async (req, res, userId) => {
+  const { couponCode } = req.body;
 
   try {
     const coupon = await Coupon.findOne({ CouponCode: couponCode });
