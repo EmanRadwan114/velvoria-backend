@@ -8,19 +8,37 @@ import authenticate from "../middlewares/authentication.middleware.js";
 
 const productRouter = new Router();
 
+//^------------------------GET all products & POST new product------------------------
 productRouter
   .route("/")
   .get(productControllers.getAllProducts)
-  .post(authenticate([systemRoles.admin]), validateRequestBody(productValidation.addProductValidation), productControllers.addNewProduct);
+  .post(
+    authenticate([systemRoles.admin]),
+    validateRequestBody(productValidation.addProductValidation),
+    productControllers.addNewProduct
+  );
 
+//^-------------------------------Search Product--------------------------------
+productRouter.get("/search", productControllers.searchProduct);
+
+//^--------------------------GET Products By Category---------------------------
+productRouter.get(
+  "/category/:categoryName",
+  productControllers.getProductsByCategory
+);
+
+//^--------------------------GET Products By Label---------------------------
+productRouter.get("/label/:label", productControllers.getProductsByLabel);
+
+//^--------------------------GET, UPDATE and DELETE product by ID---------------------------
 productRouter
   .route("/:id")
   .get(productControllers.getProductById)
   .delete(authenticate([systemRoles.admin]), productControllers.deleteProduct)
-  .put(authenticate([systemRoles.admin]), validateRequestBody(productValidation.updateProductValidation), productControllers.updateProduct);
-
-productRouter.get("/category/:categoryName", productControllers.getProductsByCategory);
-
-productRouter.get("/label/:label", productControllers.getProductsByLabel);
+  .put(
+    authenticate([systemRoles.admin]),
+    validateRequestBody(productValidation.updateProductValidation),
+    productControllers.updateProduct
+  );
 
 export default productRouter;

@@ -34,7 +34,9 @@ const getProductsByCategory = async (req, res) => {
       return res.status(404).json({ message: "Category not found" });
     }
     //populate to get data of category with products
-    const products = await Product.find({ categoryID: category._id }).populate("categoryID");
+    const products = await Product.find({ categoryID: category._id }).populate(
+      "categoryID"
+    );
     if (products.length === 0) {
       res.status(404).json({ message: "no products found" });
     }
@@ -63,7 +65,9 @@ const getProductsByLabel = async (req, res) => {
 const addNewProduct = async (req, res) => {
   try {
     let product = await Product.create(req.body);
-    res.status(200).json({ message: "product added successfully", data: product });
+    res
+      .status(200)
+      .json({ message: "product added successfully", data: product });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -80,7 +84,9 @@ const updateProduct = async (req, res) => {
       product[key] = req.body[key];
     });
     await product.save();
-    res.status(200).json({ message: "product updated successfully", data: product });
+    res
+      .status(200)
+      .json({ message: "product updated successfully", data: product });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -98,6 +104,42 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+//^-------------------------------Search Product--------------------------------
+const searchProduct = async (req, res) => {
+  try {
+    let query = req.query.q.toLowerCase();
+
+    if (query.includes("-")) {
+      query = query.split("-").join(" ");
+    }
+
+    const searchTerms = query
+      .split(" ")
+      .map((term) => term.trim())
+      .filter((term) => term.length > 0);
+
+    const searchQuery = searchTerms.map((term) => ({
+      $or: [
+        { title: { $regex: term, $options: "i" } },
+        { description: { $regex: term, $options: "i" } },
+        { material: { $regex: term, $options: "i" } },
+        { color: { $regex: term, $options: "i" } },
+      ],
+    }));
+
+    const searchedProducts = await Product.find({ $or: searchQuery });
+
+    if (searchedProducts.length === 0)
+      return res
+        .status(404)
+        .json({ message: "no products found that match your search" });
+
+    res.status(200).json({ message: "success", data: searchedProducts });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+};
+
 export default {
   addNewProduct,
   updateProduct,
@@ -106,4 +148,5 @@ export default {
   getProductById,
   getProductsByCategory,
   getProductsByLabel,
+  searchProduct,
 };
