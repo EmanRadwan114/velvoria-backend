@@ -1,3 +1,4 @@
+import Review from "../../db/models/review.model.js";
 import generateAndSendActivationEmail from "../utils/emailActivation.js";
 import generateToken from "../utils/generateToken.js";
 import User from "./../../db/models/user.model.js";
@@ -149,9 +150,37 @@ const deleteUser = async (req, res, userID) => {
   }
 };
 
+// ^-----------------------------GET All User Reviews-----------------------
+const getAllUserReviews = async (userID, res) => {
+  try {
+    const reviews = await Review.find({
+      userID,
+    }).populate("userID", "name email image");
+
+    if (reviews.length === 0)
+      return res
+        .status(404)
+        .json({ message: "no reviews added for this user" });
+
+    const userReviews = reviews.map((item) => {
+      const { userID, ...rest } = item.toObject();
+
+      return {
+        ...rest,
+        user: userID,
+      };
+    });
+
+    res.status(200).json({ message: "success", data: userReviews });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+};
+
 export default {
   getAllUsers,
   getUser,
   updateUser,
   deleteUser,
+  getAllUserReviews,
 };
