@@ -32,9 +32,6 @@ productRouter.get(
 //^--------------------------GET Products By Label---------------------------
 productRouter.get("/label/:label", productControllers.getProductsByLabel);
 
-//^-------------------------------Get Product Rreviews--------------------------------
-productRouter.use("/:id/reviews", reviewRouter);
-
 //^--------------------------GET, UPDATE and DELETE product by ID---------------------------
 productRouter
   .route("/:id")
@@ -45,5 +42,8 @@ productRouter
     validateRequestBody(productValidation.updateProductValidation),
     productControllers.updateProduct
   );
+
+//^-------------------------------Get Product Rreviews--------------------------------
+productRouter.use("/:id/reviews", reviewRouter);
 
 export default productRouter;
