@@ -127,7 +127,9 @@ const searchProduct = async (req, res) => {
       ],
     }));
 
-    const searchedProducts = await Product.find({ $or: searchQuery });
+    const searchedProducts = await Product.find({ $or: searchQuery }).populate(
+      "categoryID"
+    );
 
     if (searchedProducts.length === 0)
       return res
@@ -135,6 +137,45 @@ const searchProduct = async (req, res) => {
         .json({ message: "no products found that match your search" });
 
     res.status(200).json({ message: "success", data: searchedProducts });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+};
+
+//^-------------------------------Filter Product--------------------------------
+const filterProducts = async (req, res) => {
+  try {
+    const query = req.query;
+
+    console.log(query);
+
+    console.log(await Product.find({ material: req.query.material }));
+
+    const filterQuery = {};
+
+    if (query.material) {
+      const materialQuery = query.material.includes("-")
+        ? query.material.split("-").join(" ")
+        : query.material;
+      filterQuery.material = { $regex: materialQuery, $options: "i" };
+    }
+
+    if (query.color) {
+      filterQuery.color = { $regex: query.color, $options: "i" };
+    }
+
+    if (query.price) {
+      filterQuery.price = { $lte: +query.price };
+    }
+
+    const filteredProducts = await Product.find(filterQuery);
+
+    if (filteredProducts.length === 0)
+      return res
+        .status(404)
+        .json({ message: "no products found that match your filteration" });
+
+    res.status(200).json({ message: "success", data: filteredProducts });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -149,4 +190,5 @@ export default {
   getProductsByCategory,
   getProductsByLabel,
   searchProduct,
+  filterProducts,
 };

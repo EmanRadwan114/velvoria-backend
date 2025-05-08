@@ -18,8 +18,9 @@ productRouter
     productControllers.addNewProduct
   );
 
-//^-------------------------------Search Product--------------------------------
+//^-------------------------------Search & filter Product--------------------------------
 productRouter.get("/search", productControllers.searchProduct);
+productRouter.get("/filter", productControllers.filterProducts);
 
 //^--------------------------GET Products By Category---------------------------
 productRouter.get(
