@@ -5,6 +5,7 @@ import productValidation from "../validation/product.validation.js";
 import validateRequestBody from "../middlewares/schemaValidation.middleware.js";
 import systemRoles from "../utils/systemRoles.js";
 import authenticate from "../middlewares/authentication.middleware.js";
+import reviewRouter from "./review.routes.js";
 
 const productRouter = new Router();
 
@@ -30,6 +31,9 @@ productRouter.get(
 
 //^--------------------------GET Products By Label---------------------------
 productRouter.get("/label/:label", productControllers.getProductsByLabel);
+
+//^-------------------------------Get Product Rreviews--------------------------------
+productRouter.use("/:id/reviews", reviewRouter);
 
 //^--------------------------GET, UPDATE and DELETE product by ID---------------------------
 productRouter
