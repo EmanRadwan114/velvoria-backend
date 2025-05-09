@@ -23,9 +23,16 @@ const PORT = process.env.PORT || 7500;
 const app = express();
 
 // ^------------------global middlewares
-app.use(cors());
-
 app.use(cookieParser());
+
+app.use(
+  cors({
+    origin: process.env.FRONT_URL,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // ?handle form submissions (application/x-www-form-urlencoded)
 app.use(express.urlencoded({ extended: true }));

@@ -5,7 +5,7 @@ import validateRequestBody from "../middlewares/schemaValidation.middleware.js";
 import authenticate from "./../middlewares/authentication.middleware.js";
 import systemRoles from "../utils/systemRoles.js";
 
-const userRouter = new Router();
+const userRouter = new Router({ mergeParams: true });
 
 //* get all users
 userRouter.get(
@@ -30,6 +30,20 @@ userRouter
   .delete(authenticate(Object.values(systemRoles)), (req, res) => {
     userControllers.deleteUser(req, res, req.user.id);
   });
+
+//* get user reviews for current user ==> user only
+userRouter.get("/reviews/me", authenticate([systemRoles.user]), (req, res) => {
+  userControllers.getAllUserReviews(req.user.id, res);
+});
+
+//* get user reviews for a user by user ID ==> admin only
+userRouter.get(
+  "/reviews/:id",
+  authenticate([systemRoles.admin]),
+  (req, res) => {
+    userControllers.getAllUserReviews(req.params.id, res);
+  }
+);
 
 //* get & delete user by id ==> admin only
 userRouter

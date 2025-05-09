@@ -5,6 +5,7 @@ import productValidation from "../validation/product.validation.js";
 import validateRequestBody from "../middlewares/schemaValidation.middleware.js";
 import systemRoles from "../utils/systemRoles.js";
 import authenticate from "../middlewares/authentication.middleware.js";
+import reviewRouter from "./review.routes.js";
 
 const productRouter = new Router();
 
@@ -41,5 +42,8 @@ productRouter
     validateRequestBody(productValidation.updateProductValidation),
     productControllers.updateProduct
   );
+
+//^-------------------------------Get Product Rreviews--------------------------------
+productRouter.use("/:id/reviews", reviewRouter);
 
 export default productRouter;
