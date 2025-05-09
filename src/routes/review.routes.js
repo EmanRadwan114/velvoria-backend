@@ -11,10 +11,7 @@ const reviewRouter = new Router({ mergeParams: true });
 // ^-----------------------------GET All Product Reviews & POST New Review-----------------------
 reviewRouter
   .route("/")
-  .get(
-    authenticate(Object.values(systemRoles)),
-    reviewControllers.getAllProductReviews
-  )
+  .get(reviewControllers.getAllProductReviews)
   .post(
     authenticate([systemRoles.user]),
     validateRequestBody(reviewValidation.addReviewValidation),
