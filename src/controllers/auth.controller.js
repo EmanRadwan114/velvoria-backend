@@ -132,9 +132,11 @@ const signIn = async (req, res) => {
     //* 4- send token in http-only cookie to prevent js access
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "none",
-      // secure: process.env.NODE_ENV === 'production',
-      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), //? 7 days
+      sameSite: "lax", // Change from "none" to "lax" for development
+      secure: false, // Keep false for HTTP in development
+      domain: "localhost", // Explicitly set domain
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+      path: "/", // Ensure cookie is available on all paths
     });
 
     //* 4- send success msg
