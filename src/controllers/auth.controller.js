@@ -148,6 +148,7 @@ const signIn = async (req, res) => {
         email: user.email,
         isEmailActive: user.isEmailActive,
         role: user.role,
+        image: user.image,
       },
     });
   } catch (err) {
@@ -175,15 +176,18 @@ const logOut = async (req, res) => {
   const user = await User.findById(id).select("name email role");
 
   const token = generateToken(
-    { id: user.id },
+    { email: user.email, id: user._id, role: user.role },
     process.env.USER_TOKEN_SECRET_KEY,
-    "5s"
+    "10s" // Token expires in 10 seconds
   );
 
   res.cookie("token", token, {
     httpOnly: true,
-    // secure: process.env.NODE_ENV === 'production',
-    expires: new Date(Date.now() + 3 * 1000), //? expires in 3 seconds
+    sameSite: "lax",
+    secure: false,
+    domain: "localhost",
+    maxAge: 10000,
+    path: "/",
   });
 
   res
