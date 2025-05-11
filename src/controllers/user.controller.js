@@ -7,9 +7,9 @@ import bcrypt from "bcrypt";
 // ^----------------------------------Get All Users--------------------------
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select(
-      "name email role wishlist image address"
-    );
+    const users = await User.find()
+      .select("name email role wishlist image address")
+      .sort({ createdAt: -1 });
 
     if (users.length === 0)
       return res.status(404).json({ message: "no users found" });
@@ -155,7 +155,9 @@ const getAllUserReviews = async (userID, res) => {
   try {
     const reviews = await Review.find({
       userID,
-    }).populate("userID", "name email image");
+    })
+      .populate("userID", "name email image")
+      .sort({ createdAt: -1 });
 
     if (reviews.length === 0)
       return res

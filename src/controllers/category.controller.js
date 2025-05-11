@@ -32,7 +32,7 @@ const addNewCategory = async (req, res) => {
 
 const getAllCategories = async (req, res) => {
   try {
-    let categories = await Category.find();
+    let categories = await Category.find().sort({ createdAt: -1 });
     res.status(200).json({ message: "Categories founded", data: categories });
   } catch (error) {
     res.status(500).json({ message: "Server error.", error: error.message });

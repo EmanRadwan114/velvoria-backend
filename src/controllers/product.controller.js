@@ -3,7 +3,7 @@ import Product from "../../db/models/product.model.js";
 
 const getAllProducts = async (req, res) => {
   try {
-    let products = await Product.find();
+    let products = await Product.find().sort({ createdAt: -1 });
     if (products.length === 0) {
       res.status(404).json({ message: "no products found" });
     }
@@ -29,7 +29,7 @@ const getProductsByCategory = async (req, res) => {
   try {
     const category = await Category.findOne({
       name: { $regex: new RegExp(req.params.categoryName, "i") }, // 'i' for case-insensitive
-    });
+    }).sort({ createdAt: -1 });
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
@@ -52,7 +52,9 @@ const getProductsByLabel = async (req, res) => {
     if (!validLabels.includes(req.params.label)) {
       return res.status(404).json({ message: "invalid label type" });
     }
-    const products = await Product.find({ label: req.params.label });
+    const products = await Product.find({ label: req.params.label }).sort({
+      createdAt: -1,
+    });
     if (products.length === 0) {
       res.status(404).json({ message: "no products found" });
     }
@@ -127,9 +129,9 @@ const searchProduct = async (req, res) => {
       ],
     }));
 
-    const searchedProducts = await Product.find({ $or: searchQuery }).populate(
-      "categoryID"
-    );
+    const searchedProducts = await Product.find({ $or: searchQuery })
+      .populate("categoryID")
+      .sort({ createdAt: -1 });
 
     if (searchedProducts.length === 0)
       return res
@@ -164,7 +166,9 @@ const filterProducts = async (req, res) => {
       filterQuery.price = { $lte: +query.price };
     }
 
-    const filteredProducts = await Product.find(filterQuery);
+    const filteredProducts = await Product.find(filterQuery).sort({
+      createdAt: -1,
+    });
 
     if (filteredProducts.length === 0)
       return res
@@ -172,6 +176,24 @@ const filterProducts = async (req, res) => {
         .json({ message: "no products found that match your filteration" });
 
     res.status(200).json({ message: "success", data: filteredProducts });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+};
+
+//^-------------------------------Get less ordered product to put sale on --------------------------------
+const getLeastOrderedProduct = async (req, res) => {
+  try {
+    const leastOrderedProduct = await Product.findOne().sort({
+      orderCount: 1,
+    });
+
+    if (!leastOrderedProduct)
+      return res
+        .status(404)
+        .json({ message: "least ordered product is not found" });
+
+    res.status(200).json({ message: "success", data: leastOrderedProduct });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -187,4 +209,5 @@ export default {
   getProductsByLabel,
   searchProduct,
   filterProducts,
+  getLeastOrderedProduct,
 };
