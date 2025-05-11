@@ -6,6 +6,8 @@ const validateRequestBody = (schema) => {
       });
     }
 
+    // console.log("Received body:", req.body);
+
     const valid = schema(req.body);
     const errors = [];
 

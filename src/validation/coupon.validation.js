@@ -9,7 +9,7 @@ const addCouponSchema = {
   properties: {
     CouponCode: { type: "string", minLength: 3 },
     CouponPercentage: { type: "number", minimum: 1, maximum: 100 },
-    expirationDate: { type: "string", format: "date-time" },
+    expirationDate: { type: "string", format: "date" },
     maxUsageLimit: { type: "number", minimum: 1 },
     isActive: { type: "boolean" },
   },
@@ -27,7 +27,7 @@ const updateCouponSchema = {
   properties: {
     CouponCode: { type: "string", minLength: 3 },
     CouponPercentage: { type: "number", minimum: 1, maximum: 100 },
-    expirationDate: { type: "string", format: "date-time" },
+    expirationDate: { type: "string", format: "date" },
     maxUsageLimit: { type: "number", minimum: 1 },
     isActive: { type: "boolean" },
   },
