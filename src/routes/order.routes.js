@@ -21,6 +21,13 @@ orderRouter
     orderControllers.getUserOrders
   );
 
+// ^----------------------------------GET All User Orders--------------------------
+orderRouter.get(
+  "/orders-by-month",
+  authenticate([systemRoles.admin]),
+  orderControllers.getOrdersByMonth
+);
+
 // ^----------------------------------GET, PUT & DELETE Order By ID--------------------------
 orderRouter
   .route("/:id")

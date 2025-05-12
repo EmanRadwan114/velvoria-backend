@@ -216,6 +216,26 @@ const getLeastOrderedProduct = async (req, res) => {
   }
 };
 
+//^-------------------------------Get Best Selling Products --------------------------------
+const getBestSellingProducts = async (req, res) => {
+  try {
+    let bestSellingProducts = await Product.find().populate("categoryID").sort({
+      orderCount: -1,
+    });
+
+    if (bestSellingProducts.length === 0)
+      return res
+        .status(404)
+        .json({ message: "no best selling products found" });
+
+    bestSellingProducts = bestSellingProducts.slice(0, 5);
+
+    res.status(200).json({ message: "success", data: bestSellingProducts });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+};
+
 export default {
   addNewProduct,
   updateProduct,
@@ -227,4 +247,5 @@ export default {
   searchProduct,
   filterProducts,
   getLeastOrderedProduct,
+  getBestSellingProducts,
 };
