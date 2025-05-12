@@ -198,19 +198,24 @@ const filterProducts = async (req, res) => {
   }
 };
 
-//^-------------------------------Get less ordered product to put sale on --------------------------------
+//^-----------------Get less ordered randomized products to put sale on --------------------
 const getLeastOrderedProduct = async (req, res) => {
   try {
-    const leastOrderedProduct = await Product.findOne().sort({
-      orderCount: 1,
-    });
+    const leastOrderedProducts = (
+      await Product.find().sort({ orderCount: 1 })
+    ).slice(0, 10);
 
-    if (!leastOrderedProduct)
-      return res
-        .status(404)
-        .json({ message: "least ordered product is not found" });
+    if (!leastOrderedProducts)
+      return res.status(404).json({ message: "no products found" });
 
-    res.status(200).json({ message: "success", data: leastOrderedProduct });
+    // * Randomly select  products
+    const randomLeastOrderedProducts = leastOrderedProducts.sort(
+      () => 0.5 - Math.random()
+    );
+
+    res
+      .status(200)
+      .json({ message: "success", data: randomLeastOrderedProducts });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }

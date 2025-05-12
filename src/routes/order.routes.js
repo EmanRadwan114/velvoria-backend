@@ -21,7 +21,7 @@ orderRouter
     orderControllers.getUserOrders
   );
 
-// ^----------------------------------GET All User Orders--------------------------
+// ^----------------------------------GET Orders By Month--------------------------
 orderRouter.get(
   "/orders-by-month",
   authenticate([systemRoles.admin]),
