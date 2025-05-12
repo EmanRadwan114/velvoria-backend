@@ -1,5 +1,6 @@
 import Category from "../../db/models/category.model.js";
 import Product from "../../db/models/product.model.js";
+import mongoose from "mongoose";
 
 const getAllProducts = async (req, res) => {
   try {
@@ -150,6 +151,22 @@ const filterProducts = async (req, res) => {
     const query = req.query;
 
     const filterQuery = {};
+    if (query.category) {
+      let catId = query.category;
+
+      // if it’s not a valid ObjectId, look up by name
+      if (!mongoose.Types.ObjectId.isValid(catId)) {
+        const catDoc = await Category.findOne({
+          name: new RegExp("^" + query.category + "$", "i"),
+        });
+        if (!catDoc) {
+          return res.status(404).json({ message: "Category not found" });
+        }
+        catId = catDoc._id;
+      }
+
+      filterQuery.categoryID = catId;
+    }
 
     if (query.material) {
       const materialQuery = query.material.includes("-")
