@@ -23,10 +23,16 @@ productRouter
 productRouter.get("/search", productControllers.searchProduct);
 productRouter.get("/filter", productControllers.filterProducts);
 
-//^-------------------------------Search & filter Product--------------------------------
+//^-------------------------------Least Ordered Product--------------------------------
 productRouter.get(
   "/least-ordered-product",
   productControllers.getLeastOrderedProduct
+);
+
+//^-------------------------------Get Best Selling Products--------------------------------
+productRouter.get(
+  "/best-selling-products",
+  productControllers.getBestSellingProducts
 );
 
 //^--------------------------GET Products By Category---------------------------

@@ -215,6 +215,56 @@ const getCurrentOrder = async (req, res) => {
   }
 };
 
+//^-------------------------------Get Orders Data in Each Month--------------------------------
+const getOrdersByMonth = async (req, res) => {
+  try {
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+
+    let ordersByMonth = await Order.aggregate([
+      //* 1 Match orders within the specified year
+      {
+        $match: {
+          createdAt: {
+            $gte: new Date(`${year}-01-01`),
+            $lt: new Date(`${year + 1}-01-01`),
+          },
+        },
+      },
+
+      //* 2 Group by month and year
+      {
+        $group: {
+          _id: { month: { $month: "$createdAt" } },
+          totalOrders: { $sum: 1 },
+          totalRevenue: { $sum: "$totalPrice" },
+        },
+      },
+
+      //* 3: Sort by month in ascending order
+      { $sort: { "_id.month": 1 } },
+    ]);
+
+    if (!ordersByMonth.length) {
+      return res.status(404).json({ message: "No orders found for this year" });
+    }
+
+    ordersByMonth = ordersByMonth.map((order) => {
+      const { _id, ...rest } = order;
+
+      return {
+        ...rest,
+        month: _id.month,
+      };
+    });
+
+    res.status(200).json({ message: "success", data: ordersByMonth });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // ^----------------------------------Cancel Order--------------------------
 const cancelOrder = async (req, res) => {}; //additional feature
 
@@ -226,5 +276,6 @@ export default {
   deleteOrderByID,
   addNewOrder,
   getCurrentOrder,
+  getOrdersByMonth,
   cancelOrder,
 };
