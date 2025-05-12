@@ -23,9 +23,9 @@ productRouter
 productRouter.get("/search", productControllers.searchProduct);
 productRouter.get("/filter", productControllers.filterProducts);
 
-//^-------------------------------Least Ordered Product--------------------------------
+//^-------------------------------Least Ordered Products--------------------------------
 productRouter.get(
-  "/least-ordered-product",
+  "/least-ordered-products",
   productControllers.getLeastOrderedProduct
 );
 
