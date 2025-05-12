@@ -8,10 +8,25 @@ import validateRequestBody from "./../middlewares/schemaValidation.middleware.js
 
 const orderRouter = new Router();
 
-// ^----------------------------------GET All Orders--------------------------
+// ^---------------------------GET All Orders & POST Neww Order----------------------
 orderRouter
   .route("/")
-  .get(authenticate([systemRoles.admin]), orderControllers.getAllOrders);
+  .get(authenticate([systemRoles.admin]), orderControllers.getAllOrders)
+  .post(authenticate([systemRoles.user]), orderControllers.createOrder);
+
+// ^---------------------------Handle online payment success----------------------
+orderRouter.get(
+  "/payment/success/:orderId",
+  authenticate([systemRoles.user]),
+  orderControllers.getOrderByID
+);
+
+// ^--------------------------------create webhook & verify payment--------------------------
+orderRouter.post(
+  "/webhook",
+  authenticate([systemRoles.user]),
+  orderControllers.createWebhook
+);
 
 // ^----------------------------------GET All User Orders--------------------------
 orderRouter

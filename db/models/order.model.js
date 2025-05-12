@@ -11,7 +11,12 @@ const orderSchema = new Schema(
       },
     ],
     shippingAddress: { type: String, required: true },
-    paymentMethod: { type: String, enum: ["cash", "online"], required: true },
+    paymentMethod: {
+      type: String,
+      enum: ["cash", "online"],
+      default: "cash",
+      required: true,
+    },
     orderStatus: {
       type: String,
       enum: ["paid", "waiting"],

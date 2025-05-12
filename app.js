@@ -5,7 +5,6 @@ import db from "./db/dbConnection.js";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-
 import globalErrHandler from "./src/middlewares/globalErrHandler.middleware.js";
 import authRouter from "./src/routes/auth.routes.js";
 import categoryRouter from "./src/routes/category.routes.js";
@@ -17,10 +16,9 @@ import reviewRouter from "./src/routes/review.routes.js";
 import userRouter from "./src/routes/user.routes.js";
 import wishlistRouter from "./src/routes/wishlist.routes.js";
 
-const PORT = process.env.PORT || 7500;
-
 // ^------------------create server
 const app = express();
+const PORT = process.env.PORT || 7500;
 
 // ^------------------global middlewares
 app.use(cookieParser());
