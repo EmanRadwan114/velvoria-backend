@@ -45,5 +45,4 @@ productRouter
 
 //^-------------------------------Get Product Rreviews--------------------------------
 productRouter.use("/:id/reviews", reviewRouter);
-
 export default productRouter;
