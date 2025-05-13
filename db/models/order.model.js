@@ -20,7 +20,7 @@ const orderSchema = new Schema(
     orderStatus: {
       type: String,
       enum: ["paid", "waiting"],
-      default: "waiting",
+      default: "waiting", // for both cash and online
     },
     shippingStatus: {
       type: String,

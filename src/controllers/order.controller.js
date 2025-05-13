@@ -1,251 +1,222 @@
 import Order from "../../db/models/order.model.js";
+import Cart from "./../../db/models/cart.model.js";
+import Coupon from "../../db/models/coupon.model.js";
 
 // * online payment using stripe
 import Stripe from "stripe";
-import Cart from "./../../db/models/cart.model.js";
-import Product from "./../../db/models/product.model.js";
-import Coupon from "../../db/models/coupon.model.js";
+import User from "../../db/models/user.model.js";
+import Product from "../../db/models/product.model.js";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 //^ ------------------------------------------ create order ------------------------------------------
 export const createOrder = async (req, res) => {
-  const { shippingAddress, paymentMethod, couponCode, totalPrice } = req.body;
+  let { shippingAddress, paymentMethod, couponCode, totalPrice } = req.body;
 
-  // ^ get order products from in cart
-  const cart = await Cart.findOne({ userID: req.user.id });
-
-  if (!cart) return res.status(404).json({ message: "cart is not found" });
-
-  if (!cart.cartItems.length)
-    return res.status(409).json({ message: "cart is empty" });
-
-  const order = new Order({
-    userID: req.user.id,
-    orderItems: cart.cartItems,
-    totalPrice,
-    paymentMethod,
-    orderStatus: paymentMethod === "cash" ? "waiting" : "paid",
-    shippingAddress,
-  });
-
-  if (!order)
-    return res.status(404).json({ message: "order does not created" });
-
-  await order.save();
-
-  // *push user ID in couponUsers
-  if (req.body?.couponCode) {
-    await Coupon.updateOne(
-      { couponCode },
-      { $push: { CouponUsers: req.user.id } }
+  try {
+    // 1. Get cart & check coupon
+    const cart = await Cart.findOne({ userID: req.user.id }).populate(
+      "cartItems.productId"
     );
-  }
+    if (!cart || cart.cartItems.length === 0) {
+      return res.status(400).json({ message: "Your cart is empty" });
+    }
 
-  // *update product stock
-  for (const product of orderItems) {
-    await Product.findByIdAndUpdate(product.productId, {
-      $inc: {
-        stock: -product.quantity,
-      },
-    });
-  }
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ CouponCode: couponCode });
 
-  // *empty cartItems array
-  cart.cartItems = [];
-  await cart.save();
+      if (!coupon) {
+        return res.status(400).json({ message: "coupon is not found" });
+      }
+      if (coupon.CouponUsers.includes(req.user.id)) {
+        return res
+          .status(400)
+          .json({ message: "you can not use this coupon more than one time " });
+      }
+    }
 
-  // * send email with order info ====s====> add it
+    // 2. Look up coupon percentage (0 if none)
+    let discountPct = 0;
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ CouponCode: couponCode });
+      if (!coupon) {
+        return res.status(404).json({ message: "Coupon not found." });
+      }
+      discountPct = coupon.CouponPercentage;
+    }
 
-  if (paymentMethod === "card") {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "payment",
-      customer_email: req.user.email,
-      metadata: {
-        orderId: order._id.toString(),
-      },
-      success_url: `${req.protocol}://${req.headers.host}/orders/success/${order._id}`,
-      cancel_url: `${req.protocol}://${req.headers.host}/cart`,
-      line_items: order.orderItems.map(async (item) => {
-        const product = await Product.findById(item.productId);
-
-        return {
-          price_data: {
-            currency: "egp",
-            product_data: {
-              name: product.title,
-              images: [product.thumbnail],
-            },
-            unit_amount: product.price * 100,
+    // 5. Build a single Stripe line item for the whole order
+    const lineItems = [
+      {
+        price_data: {
+          currency: "egp",
+          product_data: {
+            name: "Order Total (after discount)",
           },
-          quantity: item.quantity,
-        };
-      }),
-    });
-    return res.status(201).json({
-      message: "success",
-      session_url: session.url,
-      data: order,
-    });
-  }
+          unit_amount: Math.round(totalPrice * 100), // cents
+        },
+        quantity: 1,
+      },
+    ];
 
-  res.status(201).json({ message: "success", data: order });
+    // 6. Save the Order
+    const order = new Order({
+      userID: req.user.id,
+      orderItems: cart.cartItems.map((i) => ({
+        productId: i.productId._id,
+        quantity: i.quantity,
+      })),
+      shippingAddress,
+      paymentMethod,
+      totalPrice,
+      orderStatus: "waiting",
+    });
+    await order.save();
+
+    const user = await User.findById(req.user.id);
+    user.address.push(shippingAddress);
+    await user.save();
+
+    // 7. Cash payment: record coupon use & clear cart immediately
+    if (paymentMethod === "cash") {
+      if (couponCode) {
+        await Coupon.updateOne(
+          { CouponCode: couponCode },
+          { $push: { CouponUsers: req.user.id } }
+        );
+      }
+
+      for (const item of cart.cartItems) {
+        const product = item.productId;
+        if (product.stock > 0) {
+          product.stock -= item.quantity; // Decrease the stock by the quantity in the cart
+          await product.save(); // Save the product with the updated stock
+        }
+      }
+
+      cart.cartItems = [];
+      await cart.save();
+
+      return res
+        .status(201)
+        .json({ message: "Order placed successfully.", data: order });
+    }
+
+    // 8. Online payment: create Stripe session
+    if (paymentMethod === "online") {
+      let session;
+      try {
+        session = await stripe.checkout.sessions.create({
+          payment_method_types: ["card"],
+          line_items: lineItems,
+          mode: "payment",
+          customer_email: req.user.email,
+          metadata: {
+            orderId: order._id.toString(),
+            couponCode: couponCode || "",
+          },
+          success_url: `${process.env.FRONT_URL}/orders/${order._id}`,
+          cancel_url: `${process.env.FRONT_URL}/cart`,
+        });
+      } catch (stripeErr) {
+        return res.status(502).json({
+          message: "Payment gateway error",
+          detail: stripeErr.message,
+        });
+      }
+
+      return res.status(200).json({
+        message: "Checkout session created successfully.",
+        sessionId: session.id,
+      });
+    }
+  } catch (err) {
+    console.error("Order creation error:", err);
+    return res
+      .status(500)
+      .json({ message: "Server error during order creation." });
+  }
 };
 
 //^ --------------------------------------craete webhook---------------------------------------
 export const createWebhook = async (req, res) => {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const sig = req.headers["stripe-signature"];
+  let event;
 
-  const event = stripe.webhooks.constructEvent(
-    req.body,
-    sig,
-    process.env.ENDPOINT_SECRET
-  );
-
-  if (!event)
-    return res
-      .status(400)
-      .json({ message: `error in webhook signature validation` });
-
-  // Handle the event
-  const { orderId } = event.data.object.metadata;
-
-  if (event.type === "checkout.session.completed") {
-    const order = await Order.findByIdAndUpdate(
-      orderId,
-      {
-        orderStatus: "paid",
-      },
-      { new: true }
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
     );
-
-    return res
-      .status(200)
-      .json({ message: "order is paid and placed", data: order });
+  } catch (err) {
+    console.error("Webhook error:", err);
+    return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
 
-  return res.status(200).json({ message: "order is not placed" });
+  if (event.type === "checkout.session.completed") {
+    try {
+      const session = event.data.object;
+
+      // Validate required metadata
+      if (!session.metadata || !session.metadata.orderId) {
+        return res.status(400).json({ error: "Missing orderId in metadata" });
+      }
+
+      const coupon = session.metadata.couponCode;
+      const orderId = session.metadata.orderId;
+
+      // 1. Update order status
+      const updatedOrder = await Order.findByIdAndUpdate(
+        orderId,
+        { orderStatus: "paid" },
+        { new: true }
+      );
+
+      if (!updatedOrder) {
+        return res.status(404).json({ error: "Order not found." });
+      }
+
+      // 2. Record coupon use
+      if (coupon) {
+        await Coupon.updateOne(
+          { CouponCode: coupon },
+          { $push: { CouponUsers: updatedOrder.userID } }
+        );
+      }
+
+      // 3. Decrement stock for each product in the order
+      for (const orderItem of updatedOrder.orderItems) {
+        const product = await Product.findById(orderItem.productId);
+        if (product && product.stock > 0) {
+          // Decrement the stock based on the quantity ordered
+          product.stock -= orderItem.quantity;
+          await product.save(); // Save the product with the updated stock
+        }
+      }
+
+      // 4. Empty cart
+      const cart = await Cart.findOne({ userID: updatedOrder.userID });
+      if (cart) {
+        cart.cartItems = [];
+        await cart.save();
+      }
+
+      return res.json({
+        success: true,
+        message: "Order marked as paid and cart emptied.",
+      });
+    } catch (error) {
+      console.error("Webhook processing error:", error);
+      return res
+        .status(500)
+        .json({ error: "Server Error: Error processing webhook" });
+    }
+  }
+
+  return res.json({ received: true });
 };
 
-// -----------------------------------------------
-
-// // ^---------------------------Create Stripe Checkout Session--------------------
-// const createCheckoutSession = async (req, res) => {
-//   const { items } = req.body;
-
-//   try {
-//     const session = await stripe.checkout.sessions.create({
-//       payment_method_types: ["card"],
-//       line_items: items.map((item) => ({
-//         price_data: {
-//           currency: "egp", // Assuming EGP is your currency
-//           product_data: { name: item.title, images: [item.thumbnail] },
-//           unit_amount: Math.round(item.price * 100), // Ensure integer value by multiplying price by 100
-//         },
-//         quantity: item.quantity,
-//       })),
-//       mode: "payment",
-//       metadata: {
-//         productData: JSON.stringify(items), // Store product data as a JSON string to be extracted after successful payment & order creation
-//       },
-//       success_url: `${process.env.BASE_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-//       cancel_url: `${process.env.BASE_URL}/cart`,
-//     });
-
-//     res.status(201).json({
-//       message: "Checkout session created successfully",
-//       sessionId: session.id,
-//     });
-//   } catch (error) {
-//     console.error("Error creating checkout session:", error);
-//     res.status(500).json({ error: error.message });
-//   }
-// };
-
-// // ^----------------------------Verify Payment and Create New Order if Successful------------------------
-// const verifyPayment = async (req, res) => {
-//   const sig = req.headers["stripe-signature"];
-
-//   let event;
-
-//   try {
-//     event = stripe.webhooks.constructEvent(
-//       req.body,
-//       sig,
-//       process.env.STRIPE_WEBHOOK_SECRET
-//     );
-//   } catch (err) {
-//     console.error("Webhook signature verification failed:", err.message);
-//     return res
-//       .status(400)
-//       .send(`Webhook signature verification failed: ${err.message}`);
-//   }
-
-//   // * Handle different event types
-//   switch (event.type) {
-//     case "checkout.session.completed":
-//       try {
-//         const session = event.data.object;
-
-//         // * Extract product data from session metadata
-//         const productData = JSON.parse(session.metadata.productData);
-
-//         // * Retrieve line items for the session (which may contain more detailed product info)
-//         const lineItems = await stripe.checkout.sessions.listLineItems(
-//           session.id
-//         );
-
-//         // * Construct order items based on line items and product data
-//         const orderItems = lineItems.data.map((item) => {
-//           const product = productData.find((p) => p.title === item.name); // Match the title from product data
-//           return {
-//             productId: product ? product.productId : null, // Get productId from productData
-//             title: item.name,
-//             quantity: item.quantity,
-//             unitPrice: item.amount_total / item.quantity / 100, // Convert total amount to price per unit in main currency unit
-//           };
-//         });
-
-//         // * Extract shipping address if available
-//         const shippingAddress = session.shipping ? session.shipping : null;
-
-//         // * Create a new order in the database
-//         const newOrder = new Order({
-//           orderStatus: "paid",
-//           totalPrice: session.amount_total / 100, // Convert total amount to main currency unit
-//           paymentMethod: "online",
-//           orderItems,
-//           shippingAddress,
-//         });
-
-//         await newOrder.save(); // Save the new order to the database
-
-//         console.log(`Order ${session.id} successfully created`);
-
-//         // Respond to acknowledge successful order creation
-//         return res.status(201).json({
-//           message: "Payment completed and order created successfully",
-//           data: newOrder,
-//         });
-//       } catch (error) {
-//         console.error("Error creating order:", error.message);
-//         return res
-//           .status(500)
-//           .json({ error: "Internal server error. Error creating order" });
-//       }
-
-//     default:
-//       // For unhandled events, return a 200 OK response to acknowledge receipt
-//       console.log(`Unhandled event type: ${event.type}`);
-//       return res
-//         .status(200)
-//         .json({ received: true, message: "Unhandled event type" });
-//   }
-// };
-
-// ^----------------------------------GET All Orders--------------------------
+// ^---------------------------------GET All Orders--------------------------
 const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
@@ -496,8 +467,6 @@ const getOrdersByMonth = async (req, res) => {
 
     res.status(200).json({ message: "success", data: ordersByMonth });
   } catch (err) {
-    console.log(err);
-
     res.status(500).json({ message: "Server error" });
   }
 };

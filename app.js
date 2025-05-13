@@ -15,10 +15,18 @@ import orderRouter from "./src/routes/order.routes.js";
 import reviewRouter from "./src/routes/review.routes.js";
 import userRouter from "./src/routes/user.routes.js";
 import wishlistRouter from "./src/routes/wishlist.routes.js";
+import orderController from "./src/controllers/order.controller.js";
 
 // ^------------------create server
 const app = express();
 const PORT = process.env.PORT || 7500;
+
+// ^--------------------------------create webhook & verify payment--------------------------
+app.post(
+  "/orders/webhook",
+  express.raw({ type: "application/json" }), // Ensures that the raw body is passed for verification
+  orderController.createWebhook
+);
 
 // ^------------------global middlewares
 app.use(cookieParser());

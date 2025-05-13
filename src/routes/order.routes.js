@@ -12,21 +12,11 @@ const orderRouter = new Router();
 orderRouter
   .route("/")
   .get(authenticate([systemRoles.admin]), orderControllers.getAllOrders)
-  .post(authenticate([systemRoles.user]), orderControllers.createOrder);
-
-// ^---------------------------Handle online payment success----------------------
-orderRouter.get(
-  "/payment/success/:orderId",
-  authenticate([systemRoles.user]),
-  orderControllers.getOrderByID
-);
-
-// ^--------------------------------create webhook & verify payment--------------------------
-orderRouter.post(
-  "/webhook",
-  authenticate([systemRoles.user]),
-  orderControllers.createWebhook
-);
+  .post(
+    authenticate([systemRoles.user]),
+    validateRequestBody(orderValidation.createOrderValidation),
+    orderControllers.createOrder
+  );
 
 // ^----------------------------------GET All User Orders--------------------------
 orderRouter
