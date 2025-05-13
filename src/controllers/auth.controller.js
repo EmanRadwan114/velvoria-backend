@@ -132,6 +132,7 @@ const signIn = async (req, res) => {
         isEmailActive: user.isEmailActive,
         role: user.role,
         image: user.image,
+        address: user.address,
       },
     });
   } catch (err) {
