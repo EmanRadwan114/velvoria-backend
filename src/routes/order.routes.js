@@ -8,10 +8,15 @@ import validateRequestBody from "./../middlewares/schemaValidation.middleware.js
 
 const orderRouter = new Router();
 
-// ^----------------------------------GET All Orders--------------------------
+// ^---------------------------GET All Orders & POST Neww Order----------------------
 orderRouter
   .route("/")
-  .get(authenticate([systemRoles.admin]), orderControllers.getAllOrders);
+  .get(authenticate([systemRoles.admin]), orderControllers.getAllOrders)
+  .post(
+    authenticate([systemRoles.user]),
+    validateRequestBody(orderValidation.createOrderValidation),
+    orderControllers.createOrder
+  );
 
 // ^----------------------------------GET All User Orders--------------------------
 orderRouter

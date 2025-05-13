@@ -1,14 +1,222 @@
 import Order from "../../db/models/order.model.js";
+import Cart from "./../../db/models/cart.model.js";
+import Coupon from "../../db/models/coupon.model.js";
 
-// ^----------------------------------POST New Order--------------------------
-const addNewOrder = async (req, res) => {
+// * online payment using stripe
+import Stripe from "stripe";
+import User from "../../db/models/user.model.js";
+import Product from "../../db/models/product.model.js";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+//^ ------------------------------------------ create order ------------------------------------------
+export const createOrder = async (req, res) => {
+  let { shippingAddress, paymentMethod, couponCode, totalPrice } = req.body;
+
   try {
+    // 1. Get cart & check coupon
+    const cart = await Cart.findOne({ userID: req.user.id }).populate(
+      "cartItems.productId"
+    );
+    if (!cart || cart.cartItems.length === 0) {
+      return res.status(400).json({ message: "Your cart is empty" });
+    }
+
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ CouponCode: couponCode });
+
+      if (!coupon) {
+        return res.status(400).json({ message: "coupon is not found" });
+      }
+      if (coupon.CouponUsers.includes(req.user.id)) {
+        return res
+          .status(400)
+          .json({ message: "you can not use this coupon more than one time " });
+      }
+    }
+
+    // 2. Look up coupon percentage (0 if none)
+    let discountPct = 0;
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ CouponCode: couponCode });
+      if (!coupon) {
+        return res.status(404).json({ message: "Coupon not found." });
+      }
+      discountPct = coupon.CouponPercentage;
+    }
+
+    // 5. Build a single Stripe line item for the whole order
+    const lineItems = [
+      {
+        price_data: {
+          currency: "egp",
+          product_data: {
+            name: "Order Total (after discount)",
+          },
+          unit_amount: Math.round(totalPrice * 100), // cents
+        },
+        quantity: 1,
+      },
+    ];
+
+    // 6. Save the Order
+    const order = new Order({
+      userID: req.user.id,
+      orderItems: cart.cartItems.map((i) => ({
+        productId: i.productId._id,
+        quantity: i.quantity,
+      })),
+      shippingAddress,
+      paymentMethod,
+      totalPrice,
+      orderStatus: "waiting",
+    });
+    await order.save();
+
+    const user = await User.findById(req.user.id);
+    user.address.push(shippingAddress);
+    await user.save();
+
+    // 7. Cash payment: record coupon use & clear cart immediately
+    if (paymentMethod === "cash") {
+      if (couponCode) {
+        await Coupon.updateOne(
+          { CouponCode: couponCode },
+          { $push: { CouponUsers: req.user.id } }
+        );
+      }
+
+      for (const item of cart.cartItems) {
+        const product = item.productId;
+        if (product.stock > 0) {
+          product.stock -= item.quantity; // Decrease the stock by the quantity in the cart
+          await product.save(); // Save the product with the updated stock
+        }
+      }
+
+      cart.cartItems = [];
+      await cart.save();
+
+      return res
+        .status(201)
+        .json({ message: "Order placed successfully.", data: order });
+    }
+
+    // 8. Online payment: create Stripe session
+    if (paymentMethod === "online") {
+      let session;
+      try {
+        session = await stripe.checkout.sessions.create({
+          payment_method_types: ["card"],
+          line_items: lineItems,
+          mode: "payment",
+          customer_email: req.user.email,
+          metadata: {
+            orderId: order._id.toString(),
+            couponCode: couponCode || "",
+          },
+          success_url: `${process.env.FRONT_URL}/orders/${order._id}`,
+          cancel_url: `${process.env.FRONT_URL}/cart`,
+        });
+      } catch (stripeErr) {
+        return res.status(502).json({
+          message: "Payment gateway error",
+          detail: stripeErr.message,
+        });
+      }
+
+      return res.status(200).json({
+        message: "Checkout session created successfully.",
+        sessionId: session.id,
+      });
+    }
   } catch (err) {
-    res.status(500).json({ message: "server error" });
+    console.error("Order creation error:", err);
+    return res
+      .status(500)
+      .json({ message: "Server error during order creation." });
   }
 };
 
-// ^----------------------------------GET All Orders--------------------------
+//^ --------------------------------------craete webhook---------------------------------------
+export const createWebhook = async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error("Webhook error:", err);
+    return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+  }
+
+  if (event.type === "checkout.session.completed") {
+    try {
+      const session = event.data.object;
+
+      // Validate required metadata
+      if (!session.metadata || !session.metadata.orderId) {
+        return res.status(400).json({ error: "Missing orderId in metadata" });
+      }
+
+      const coupon = session.metadata.couponCode;
+      const orderId = session.metadata.orderId;
+
+      // 1. Update order status
+      const updatedOrder = await Order.findByIdAndUpdate(
+        orderId,
+        { orderStatus: "paid" },
+        { new: true }
+      );
+
+      if (!updatedOrder) {
+        return res.status(404).json({ error: "Order not found." });
+      }
+
+      // 2. Record coupon use
+      if (coupon) {
+        await Coupon.updateOne(
+          { CouponCode: coupon },
+          { $push: { CouponUsers: updatedOrder.userID } }
+        );
+      }
+
+      // 3. Decrement stock for each product in the order
+      for (const orderItem of updatedOrder.orderItems) {
+        const product = await Product.findById(orderItem.productId);
+        if (product && product.stock > 0) {
+          // Decrement the stock based on the quantity ordered
+          product.stock -= orderItem.quantity;
+          await product.save(); // Save the product with the updated stock
+        }
+      }
+
+      // 4. Empty cart
+      const cart = await Cart.findOne({ userID: updatedOrder.userID });
+      if (cart) {
+        cart.cartItems = [];
+        await cart.save();
+      }
+
+      return res.json({
+        success: true,
+        message: "Order marked as paid and cart emptied.",
+      });
+    } catch (error) {
+      console.error("Webhook processing error:", error);
+      return res
+        .status(500)
+        .json({ error: "Server Error: Error processing webhook" });
+    }
+  }
+
+  return res.json({ received: true });
+};
+
+// ^---------------------------------GET All Orders--------------------------
 const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
@@ -259,8 +467,6 @@ const getOrdersByMonth = async (req, res) => {
 
     res.status(200).json({ message: "success", data: ordersByMonth });
   } catch (err) {
-    console.log(err);
-
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -274,7 +480,8 @@ export default {
   getOrderByID,
   updateOrderByID,
   deleteOrderByID,
-  addNewOrder,
+  createOrder,
+  createWebhook,
   getCurrentOrder,
   getOrdersByMonth,
   cancelOrder,

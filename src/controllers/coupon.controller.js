@@ -94,12 +94,9 @@ const applyCoupon = async (req, res, userId) => {
       return res.status(400).json({ message: "Coupon usage limit reached" });
     }
 
-    // Apply coupon (record user usage)
-    coupon.CouponUsers.push(userId);
-    await coupon.save();
-
     res.status(200).json({
       message: "Coupon applied successfully",
+      couponCode: coupon.CouponCode,
       discount: coupon.CouponPercentage,
     });
   } catch (err) {
