@@ -63,7 +63,10 @@ const updateCartItem = async (req, res, userID) => {
   try {
     if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
     //get cart of user
-    let cart = await Cart.findOne({ userID });
+    let cart = await Cart.findOne({ userID }).populate({
+      path: "cartItems.productId",
+      select: "title thumbnail price material color stock",
+    });
     if (!cart) return res.status(404).json({ message: "no cart for user" });
 
     let { productId } = req.params;
@@ -73,7 +76,7 @@ const updateCartItem = async (req, res, userID) => {
       return res.status(400).json({ message: "quantity must be at least 1" });
     }
 
-    const existingItem = cart.cartItems.find((item) => item.productId.toString() === productId);
+    const existingItem = cart.cartItems.find((item) => item.productId._id.toString() === productId);
     if (!existingItem) {
       return res.status(404).json({ message: "product not found in cart" });
     }
@@ -89,17 +92,20 @@ const deleteCartItem = async (req, res, userID) => {
   try {
     if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
 
-    let cart = await Cart.findOne({ userID });
+    let cart = await Cart.findOne({ userID }).populate({
+      path: "cartItems.productId",
+      select: "title thumbnail price material color stock",
+    });
     if (!cart) return res.status(404).json({ message: "no cart for user" });
 
     let { productId } = req.params;
 
-    const existingItem = cart.cartItems.find((item) => item.productId.toString() === productId);
+    const existingItem = cart.cartItems.find((item) => item.productId._id.toString() === productId);
     if (!existingItem) {
       return res.status(404).json({ message: "product not found in cart" });
     }
     //filter to remove item from cart
-    const filteredCart = cart.cartItems.filter((item) => item.productId.toString() !== productId);
+    const filteredCart = cart.cartItems.filter((item) => item.productId._id.toString() !== productId);
     if (filteredCart.length !== cart.cartItems.length) {
       cart.cartItems = filteredCart;
       await cart.save();
