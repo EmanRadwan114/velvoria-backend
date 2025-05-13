@@ -8,10 +8,9 @@ const getAllProductReviews = async (req, res) => {
   try {
     const productID = req.params.id;
 
-    const reviews = await Review.find({ productID }).populate(
-      "userID",
-      "name email image"
-    );
+    const reviews = await Review.find({ productID })
+      .populate("userID", "name email image")
+      .sort({ createdAt: -1 });
 
     if (reviews.length === 0)
       return res

@@ -1,9 +1,10 @@
 import Category from "../../db/models/category.model.js";
 import Product from "../../db/models/product.model.js";
+import mongoose from "mongoose";
 
 const getAllProducts = async (req, res) => {
   try {
-    let products = await Product.find();
+    let products = await Product.find().sort({ createdAt: -1 });
     if (products.length === 0) {
       res.status(404).json({ message: "no products found" });
     }
@@ -29,7 +30,7 @@ const getProductsByCategory = async (req, res) => {
   try {
     const category = await Category.findOne({
       name: { $regex: new RegExp(req.params.categoryName, "i") }, // 'i' for case-insensitive
-    });
+    }).sort({ createdAt: -1 });
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
@@ -52,7 +53,9 @@ const getProductsByLabel = async (req, res) => {
     if (!validLabels.includes(req.params.label)) {
       return res.status(404).json({ message: "invalid label type" });
     }
-    const products = await Product.find({ label: req.params.label });
+    const products = await Product.find({ label: req.params.label }).sort({
+      createdAt: -1,
+    });
     if (products.length === 0) {
       res.status(404).json({ message: "no products found" });
     }
@@ -127,9 +130,9 @@ const searchProduct = async (req, res) => {
       ],
     }));
 
-    const searchedProducts = await Product.find({ $or: searchQuery }).populate(
-      "categoryID"
-    );
+    const searchedProducts = await Product.find({ $or: searchQuery })
+      .populate("categoryID")
+      .sort({ createdAt: -1 });
 
     if (searchedProducts.length === 0)
       return res
@@ -148,6 +151,22 @@ const filterProducts = async (req, res) => {
     const query = req.query;
 
     const filterQuery = {};
+    if (query.category) {
+      let catId = query.category;
+
+      // if it’s not a valid ObjectId, look up by name
+      if (!mongoose.Types.ObjectId.isValid(catId)) {
+        const catDoc = await Category.findOne({
+          name: new RegExp("^" + query.category + "$", "i"),
+        });
+        if (!catDoc) {
+          return res.status(404).json({ message: "Category not found" });
+        }
+        catId = catDoc._id;
+      }
+
+      filterQuery.categoryID = catId;
+    }
 
     if (query.material) {
       const materialQuery = query.material.includes("-")
@@ -164,7 +183,9 @@ const filterProducts = async (req, res) => {
       filterQuery.price = { $lte: +query.price };
     }
 
-    const filteredProducts = await Product.find(filterQuery);
+    const filteredProducts = await Product.find(filterQuery).sort({
+      createdAt: -1,
+    });
 
     if (filteredProducts.length === 0)
       return res
@@ -172,6 +193,49 @@ const filterProducts = async (req, res) => {
         .json({ message: "no products found that match your filteration" });
 
     res.status(200).json({ message: "success", data: filteredProducts });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+};
+
+//^-----------------Get less ordered randomized products to put sale on --------------------
+const getLeastOrderedProduct = async (req, res) => {
+  try {
+    const leastOrderedProducts = (
+      await Product.find().sort({ orderCount: 1 })
+    ).slice(0, 10);
+
+    if (!leastOrderedProducts)
+      return res.status(404).json({ message: "no products found" });
+
+    // * Randomly select  products
+    const randomLeastOrderedProducts = leastOrderedProducts.sort(
+      () => 0.5 - Math.random()
+    );
+
+    res
+      .status(200)
+      .json({ message: "success", data: randomLeastOrderedProducts });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+};
+
+//^-------------------------------Get Best Selling Products --------------------------------
+const getBestSellingProducts = async (req, res) => {
+  try {
+    let bestSellingProducts = await Product.find().populate("categoryID").sort({
+      orderCount: -1,
+    });
+
+    if (bestSellingProducts.length === 0)
+      return res
+        .status(404)
+        .json({ message: "no best selling products found" });
+
+    bestSellingProducts = bestSellingProducts.slice(0, 5);
+
+    res.status(200).json({ message: "success", data: bestSellingProducts });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -187,4 +251,6 @@ export default {
   getProductsByLabel,
   searchProduct,
   filterProducts,
+  getLeastOrderedProduct,
+  getBestSellingProducts,
 };

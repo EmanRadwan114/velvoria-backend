@@ -23,6 +23,18 @@ productRouter
 productRouter.get("/search", productControllers.searchProduct);
 productRouter.get("/filter", productControllers.filterProducts);
 
+//^-------------------------------Least Ordered Products--------------------------------
+productRouter.get(
+  "/least-ordered-products",
+  productControllers.getLeastOrderedProduct
+);
+
+//^-------------------------------Get Best Selling Products--------------------------------
+productRouter.get(
+  "/best-selling-products",
+  productControllers.getBestSellingProducts
+);
+
 //^--------------------------GET Products By Category---------------------------
 productRouter.get(
   "/category/:categoryName",
@@ -45,5 +57,4 @@ productRouter
 
 //^-------------------------------Get Product Rreviews--------------------------------
 productRouter.use("/:id/reviews", reviewRouter);
-
 export default productRouter;
