@@ -11,18 +11,26 @@ cartRouter
   .get(authenticate([systemRoles.user]), (req, res) => {
     cartControllers.getUserCart(req, res, req.user.id);
   })
-  .post(authenticate([systemRoles.user]), validateRequestBody(cartValidation.addCartValidation), (req, res) => {
-    cartControllers.addProductToCart(req, res, req.user.id);
-  })
+  .post(
+    authenticate([systemRoles.user]),
+    validateRequestBody(cartValidation.addCartValidation),
+    (req, res) => {
+      cartControllers.addProductToCart(req, res, req.user.id);
+    }
+  )
   .delete(authenticate([systemRoles.user]), (req, res) => {
     cartControllers.clearCart(req, res, req.user.id);
   });
 
 cartRouter
   .route("/:productId")
-  .put(authenticate([systemRoles.user]), validateRequestBody(cartValidation.updateCartValidation), (req, res) => {
-    cartControllers.updateCartItem(req, res, req.user.id);
-  })
+  .put(
+    authenticate([systemRoles.user]),
+    validateRequestBody(cartValidation.updateCartValidation),
+    (req, res) => {
+      cartControllers.updateCartItem(req, res, req.user.id);
+    }
+  )
   .delete(authenticate([systemRoles.user]), (req, res) => {
     cartControllers.deleteCartItem(req, res, req.user.id);
   });
