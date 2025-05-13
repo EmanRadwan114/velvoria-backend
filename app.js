@@ -5,7 +5,6 @@ import db from "./db/dbConnection.js";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-
 import globalErrHandler from "./src/middlewares/globalErrHandler.middleware.js";
 import authRouter from "./src/routes/auth.routes.js";
 import categoryRouter from "./src/routes/category.routes.js";
@@ -16,11 +15,18 @@ import orderRouter from "./src/routes/order.routes.js";
 import reviewRouter from "./src/routes/review.routes.js";
 import userRouter from "./src/routes/user.routes.js";
 import wishlistRouter from "./src/routes/wishlist.routes.js";
-
-const PORT = process.env.PORT || 7500;
+import orderController from "./src/controllers/order.controller.js";
 
 // ^------------------create server
 const app = express();
+const PORT = process.env.PORT || 7500;
+
+// ^--------------------------------create webhook & verify payment--------------------------
+app.post(
+  "/orders/webhook",
+  express.raw({ type: "application/json" }), // Ensures that the raw body is passed for verification
+  orderController.createWebhook
+);
 
 // ^------------------global middlewares
 app.use(cookieParser());

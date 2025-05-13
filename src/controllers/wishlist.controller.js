@@ -1,5 +1,5 @@
 import User from "../../db/models/user.model.js";
-import Product from "../../db/models/product.model.js"
+import Product from "../../db/models/product.model.js";
 
 const addToWishList = async (req, res) => {
   try {
@@ -19,16 +19,19 @@ const addToWishList = async (req, res) => {
     user.wishlist.push(pid);
     await user.save();
 
-    res.status(200).json({ message: "Product added to wishlist", wishlist: user.wishlist });
+    res
+      .status(200)
+      .json({ message: "Product added to wishlist", wishlist: user.wishlist });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
 };
 
-
 const getWishList = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).populate("wishlist");
+    const user = await User.findById(req.user.id)
+      .populate("wishlist")
+      .sort({ createdAt: -1 });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     res.status(200).json({ wishlist: user.wishlist });
@@ -47,20 +50,20 @@ const deleteFromWishList = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.wishlist = user.wishlist.filter(
-      (item) => item.toString() !== pid
-    );
+    user.wishlist = user.wishlist.filter((item) => item.toString() !== pid);
 
     await user.save();
 
-    return res.status(200).json({ message: "Removed from wishlist", wishlist: user.wishlist });
+    return res
+      .status(200)
+      .json({ message: "Removed from wishlist", wishlist: user.wishlist });
   } catch (error) {
     console.error("❌ Wishlist Deletion Error:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
-
-
 
 export default {
   addToWishList,

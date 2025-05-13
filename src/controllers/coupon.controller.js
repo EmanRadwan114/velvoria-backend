@@ -13,7 +13,7 @@ const addNewCoupon = async (req, res) => {
 
 const getAllCoupons = async (req, res) => {
   try {
-    let coupons = await Coupon.find();
+    let coupons = await Coupon.find().sort({ createdAt: -1 });
     if (coupons.length === 0) {
       return res.status(404).json({ message: "no coupons found" });
     }
@@ -94,12 +94,9 @@ const applyCoupon = async (req, res, userId) => {
       return res.status(400).json({ message: "Coupon usage limit reached" });
     }
 
-    // Apply coupon (record user usage)
-    coupon.CouponUsers.push(userId);
-    await coupon.save();
-
     res.status(200).json({
       message: "Coupon applied successfully",
+      couponCode: coupon.CouponCode,
       discount: coupon.CouponPercentage,
     });
   } catch (err) {
