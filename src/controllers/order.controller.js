@@ -82,7 +82,8 @@ export const createOrder = async (req, res) => {
         const product = item.productId;
         if (product.stock > 0) {
           product.stock -= item.quantity; // Decrease the stock by the quantity in the cart
-          await product.save(); // Save the product with the updated stock
+          product.orderCount++;
+          await product.save();
         }
       }
 
@@ -168,7 +169,8 @@ export const createWebhook = async (req, res) => {
         if (product && product.stock > 0) {
           // Decrement the stock based on the quantity ordered
           product.stock -= orderItem.quantity;
-          await product.save(); // Save the product with the updated stock
+          product.orderCount++;
+          await product.save();
         }
       }
 
