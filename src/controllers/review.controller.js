@@ -7,15 +7,14 @@ import User from "./../../db/models/user.model.js";
 const getAllProductReviews = async (req, res) => {
   try {
     const productID = req.params.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
 
-    const reviews = await Review.find({ productID })
-      .populate("userID", "name email image")
-      .sort({ createdAt: -1 });
+    const total = await Review.countDocuments({ productID });
+    const reviews = await Review.find({ productID }).skip(skip).limit(limit).populate("userID", "name email image").sort({ createdAt: -1 });
 
-    if (reviews.length === 0)
-      return res
-        .status(404)
-        .json({ message: "no reviews added for this product" });
+    if (reviews.length === 0) return res.status(404).json({ message: "no reviews added for this product" });
 
     const productReviews = reviews.map((item) => {
       const { userID, ...rest } = item.toObject();
@@ -26,7 +25,7 @@ const getAllProductReviews = async (req, res) => {
       };
     });
 
-    res.status(200).json({ message: "success", data: productReviews });
+    res.status(200).json({ message: "success", data: productReviews, currentPage: page, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -42,24 +41,18 @@ const addNewProductReview = async (req, res) => {
 
     const product = await Product.findById(productID);
 
-    if (!product)
-      return res.status(404).json({ message: "product is not found" });
+    if (!product) return res.status(404).json({ message: "product is not found" });
 
     // *check if the user bought this product before && if it is shipped
     const userOrders = await Order.find({ userID });
 
-    if (userOrders.length === 0)
-      return res
-        .status(404)
-        .json({ message: "no orders requested by this user" });
+    if (userOrders.length === 0) return res.status(404).json({ message: "no orders requested by this user" });
 
     let orderID = null,
       hasOrderedProduct = false;
 
     userOrders.map((order) => {
-      const productIDs = order.orderItems.map((item) =>
-        item.productId.toString()
-      );
+      const productIDs = order.orderItems.map((item) => item.productId.toString());
       if (productIDs.includes(productID)) {
         hasOrderedProduct = true;
         orderID = order._id;
@@ -92,10 +85,7 @@ const addNewProductReview = async (req, res) => {
     await newReview.save();
 
     // *change product avgRate and NumberOfReviews
-    product.avgRating = +(
-      (product.avgRating * product.numberOfReviews + rating) /
-      (product.numberOfReviews + 1)
-    ).toFixed(1);
+    product.avgRating = +((product.avgRating * product.numberOfReviews + rating) / (product.numberOfReviews + 1)).toFixed(1);
 
     product.numberOfReviews += 1;
 
@@ -123,13 +113,11 @@ const deleteProductReviewByID = async (req, res) => {
 
     const product = await Product.findById(productID);
 
-    if (!product)
-      return res.status(404).json({ message: "product is not found" });
+    if (!product) return res.status(404).json({ message: "product is not found" });
 
     const review = await Review.findOneAndDelete({ _id: reviewID, productID });
 
-    if (!review)
-      return res.status(404).json({ message: "review is not found" });
+    if (!review) return res.status(404).json({ message: "review is not found" });
 
     res.status(200).json({ message: "success" });
   } catch (err) {

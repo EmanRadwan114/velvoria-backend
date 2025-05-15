@@ -7,14 +7,16 @@ import bcrypt from "bcrypt";
 // ^----------------------------------Get All Users--------------------------
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find()
-      .select("name email role wishlist image address")
-      .sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+    const skip = (page - 1) * limit;
 
-    if (users.length === 0)
-      return res.status(404).json({ message: "no users found" });
+    const total = await User.countDocuments();
+    const users = await User.find().skip(skip).limit(limit).select("name email role wishlist image address").sort({ createdAt: -1 });
 
-    res.status(200).json({ message: "success", data: users });
+    if (users.length === 0) return res.status(404).json({ message: "no users found" });
+
+    res.status(200).json({ message: "success", data: users, currentPage: page, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -23,14 +25,9 @@ const getAllUsers = async (req, res) => {
 // ^---------------------------Get User (ID in Params / ID in Token)------------------------
 const getUser = async (userID, res) => {
   try {
-    if (!userID)
-      return res
-        .status(401)
-        .json({ message: "you are not authorized to get this content" });
+    if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
 
-    const user = await User.findById(userID).select(
-      "-createdAt -updatedAt -password -isEmailActive"
-    );
+    const user = await User.findById(userID).select("-createdAt -updatedAt -password -isEmailActive");
 
     if (!user) return res.status(404).json({ message: "user is not found" });
 
@@ -43,10 +40,7 @@ const getUser = async (userID, res) => {
 // ^-----------------------------Update User (ID in Params / ID in Token)-----------------------
 const updateUser = async (req, res, userID) => {
   try {
-    if (!userID)
-      return res
-        .status(401)
-        .json({ message: "you are not authorized to get this content" });
+    if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
 
     const { oldPassword, newPassword, email, address, name, image } = req.body;
 
@@ -56,18 +50,11 @@ const updateUser = async (req, res, userID) => {
 
     // * change password
     if (oldPassword && newPassword) {
-      const isPasswordCorrect = await bcrypt.compare(
-        oldPassword,
-        user.password
-      );
+      const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
 
-      if (!isPasswordCorrect)
-        return res.status(401).json({ message: "incorrect password" });
+      if (!isPasswordCorrect) return res.status(401).json({ message: "incorrect password" });
 
-      user.password = await bcrypt.hash(
-        newPassword,
-        +process.env.USER_PASS_SALT_ROUNDS
-      );
+      user.password = await bcrypt.hash(newPassword, +process.env.USER_PASS_SALT_ROUNDS);
     }
 
     // * change name
@@ -81,13 +68,8 @@ const updateUser = async (req, res, userID) => {
     }
 
     // * change address (if new and not already exists)
-    if (address && user.role == "admin")
-      return res.status(400).json({ message: "admin cannot have address" });
-    else if (
-      address &&
-      user.role !== "admin" &&
-      !user.address.includes(address)
-    ) {
+    if (address && user.role == "admin") return res.status(400).json({ message: "admin cannot have address" });
+    else if (address && user.role !== "admin" && !user.address.includes(address)) {
       user.address.push(address);
     }
 
@@ -97,20 +79,14 @@ const updateUser = async (req, res, userID) => {
       user.isEmailActive = false;
       await user.save(); //? save before redirecting
       generateAndSendActivationEmail(user);
-      return res
-        .status(302)
-        .redirect(`${process.env.FRONT_URL}/login/${user.role}`);
+      return res.status(302).redirect(`${process.env.FRONT_URL}/login/${user.role}`);
     }
 
     await user.save();
 
-    const updatedUser = await User.findById(userID).select(
-      "-createdAt -updatedAt -password -isEmailActive"
-    );
+    const updatedUser = await User.findById(userID).select("-createdAt -updatedAt -password -isEmailActive");
 
-    res
-      .status(200)
-      .json({ message: "user is updated successfully", data: updatedUser });
+    res.status(200).json({ message: "user is updated successfully", data: updatedUser });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -119,21 +95,14 @@ const updateUser = async (req, res, userID) => {
 // ^-------------------------Delete User (ID in Params / ID in Token)------------------------
 const deleteUser = async (req, res, userID) => {
   try {
-    if (!userID)
-      return res
-        .status(401)
-        .json({ message: "you are not authorized to get this content" });
+    if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
 
     const user = await User.findByIdAndDelete(userID).select("name email role");
 
     if (!user) return res.status(404).json({ message: "user is not found" });
 
     if (req.user.id == user.id) {
-      const token = generateToken(
-        { id: user.id },
-        process.env.USER_TOKEN_SECRET_KEY,
-        "5s"
-      );
+      const token = generateToken({ id: user.id }, process.env.USER_TOKEN_SECRET_KEY, "5s");
 
       res.cookie("token", token, {
         httpOnly: true,
@@ -142,27 +111,29 @@ const deleteUser = async (req, res, userID) => {
       });
     }
 
-    res
-      .status(200)
-      .json({ message: "user is deleted successfully", data: user });
+    res.status(200).json({ message: "user is deleted successfully", data: user });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
 };
 
 // ^-----------------------------GET All User Reviews-----------------------
-const getAllUserReviews = async (userID, res) => {
+const getAllUserReviews = async (req, userID, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const total = await Review.countDocuments({ userID });
     const reviews = await Review.find({
       userID,
     })
       .populate("userID", "name email image")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    if (reviews.length === 0)
-      return res
-        .status(404)
-        .json({ message: "no reviews added for this user" });
+    if (reviews.length === 0) return res.status(404).json({ message: "no reviews added for this user" });
 
     const userReviews = reviews.map((item) => {
       const { userID, ...rest } = item.toObject();
@@ -173,9 +144,9 @@ const getAllUserReviews = async (userID, res) => {
       };
     });
 
-    res.status(200).json({ message: "success", data: userReviews });
+    res.status(200).json({ message: "success", data: userReviews, currentPage: page, totalPages: Math.ceil(total / limit) });
   } catch (err) {
-    res.status(500).json({ message: "server error" });
+    res.status(500).json({ message: err.message });
   }
 };
 

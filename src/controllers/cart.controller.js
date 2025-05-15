@@ -3,10 +3,7 @@ import Cart from "../../db/models/cart.model.js";
 const addProductToCart = async (req, res, userID) => {
   try {
     //authorize user
-    if (!userID)
-      return res
-        .status(401)
-        .json({ message: "you are not authorized to get this content" });
+    if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
     //get cart of user
     let cart = await Cart.findOne({ userID });
     let { productId } = req.body;
@@ -24,9 +21,7 @@ const addProductToCart = async (req, res, userID) => {
     }
 
     //the product exists in cart items or not
-    const existingItem = cart.cartItems.find(
-      (item) => item.productId.toString() === productId
-    );
+    const existingItem = cart.cartItems.find((item) => item.productId.toString() === productId);
     if (existingItem) {
       existingItem.quantity += 1;
     } else {
@@ -45,10 +40,10 @@ const addProductToCart = async (req, res, userID) => {
 
 const getUserCart = async (req, res, userID) => {
   try {
-    if (!userID)
-      return res
-        .status(401)
-        .json({ message: "you are not authorized to get this content" });
+    if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
+    const page = parseInt(req.query.page) || 1; // default page 1
+    const limit = parseInt(req.query.limit) || 3;
+    const skip = (page - 1) * limit;
     //get cart with product data
     let cart = await Cart.findOne({ userID }).populate({
       path: "cartItems.productId",
@@ -67,9 +62,14 @@ const getUserCart = async (req, res, userID) => {
       cart.cartItems = validCartItems;
       await cart.save();
     }
+    const paginatedItems = validCartItems.slice(skip, skip + limit);
+    const totalItems = validCartItems.length;
+    const totalPages = Math.ceil(totalItems / limit);
     res.status(200).json({
       message: "cart items returned successfully",
-      data: cart.cartItems,
+      currentPage: page,
+      totalPages,
+      data: paginatedItems,
     });
   } catch (err) {
     res.status(500).json({ message: "server error" });
@@ -78,10 +78,7 @@ const getUserCart = async (req, res, userID) => {
 
 const updateCartItem = async (req, res, userID) => {
   try {
-    if (!userID)
-      return res
-        .status(401)
-        .json({ message: "you are not authorized to get this content" });
+    if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
     //get cart of user
     let cart = await Cart.findOne({ userID }).populate({
       path: "cartItems.productId",
@@ -96,9 +93,8 @@ const updateCartItem = async (req, res, userID) => {
       return res.status(400).json({ message: "quantity must be at least 1" });
     }
 
-    const existingItem = cart.cartItems.find(
-      (item) => item.productId._id.toString() === productId
-    );
+    const existingItem = cart.cartItems.find((item) => item.productId._id.toString() === productId);
+
 
     if (!existingItem) {
       return res.status(404).json({ message: "product not found in cart" });
@@ -116,10 +112,7 @@ const updateCartItem = async (req, res, userID) => {
 
 const deleteCartItem = async (req, res, userID) => {
   try {
-    if (!userID)
-      return res
-        .status(401)
-        .json({ message: "you are not authorized to get this content" });
+    if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
 
     let cart = await Cart.findOne({ userID }).populate({
       path: "cartItems.productId",
@@ -129,18 +122,14 @@ const deleteCartItem = async (req, res, userID) => {
 
     let { productId } = req.params;
 
-    const existingItem = cart.cartItems.find(
-      (item) => item.productId._id.toString() === productId
-    );
+    const existingItem = cart.cartItems.find((item) => item.productId._id.toString() === productId);
 
     if (!existingItem) {
       return res.status(404).json({ message: "product not found in cart" });
     }
     //filter to remove item from cart
 
-    const filteredCart = cart.cartItems.filter(
-      (item) => item.productId._id.toString() !== productId
-    );
+    const filteredCart = cart.cartItems.filter((item) => item.productId._id.toString() !== productId);
 
     if (filteredCart.length !== cart.cartItems.length) {
       cart.cartItems = filteredCart;
@@ -157,10 +146,7 @@ const deleteCartItem = async (req, res, userID) => {
 
 const clearCart = async (req, res, userID) => {
   try {
-    if (!userID)
-      return res
-        .status(401)
-        .json({ message: "you are not authorized to get this content" });
+    if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
 
     let cart = await Cart.findOne({ userID });
     if (!cart) return res.status(404).json({ message: "no cart for user" });
