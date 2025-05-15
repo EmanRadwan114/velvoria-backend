@@ -99,10 +99,6 @@ const updateCartItem = async (req, res, userID) => {
 
     const existingItem = cart.cartItems.find((item) => item.productId._id.toString() === productId);
 
-    const existingItem = cart.cartItems.find(
-      (item) => item.productId.toString() === productId
-    );
-
     if (!existingItem) {
       return res.status(404).json({ message: "product not found in cart" });
     }
@@ -135,9 +131,7 @@ const deleteCartItem = async (req, res, userID) => {
 
     const existingItem = cart.cartItems.find((item) => item.productId._id.toString() === productId);
 
-    const existingItem = cart.cartItems.find(
-      (item) => item.productId.toString() === productId
-    );
+ 
 
     if (!existingItem) {
       return res.status(404).json({ message: "product not found in cart" });
@@ -146,9 +140,7 @@ const deleteCartItem = async (req, res, userID) => {
 
     const filteredCart = cart.cartItems.filter((item) => item.productId._id.toString() !== productId);
 
-    const filteredCart = cart.cartItems.filter(
-      (item) => item.productId.toString() !== productId
-    );
+  
 
     if (filteredCart.length !== cart.cartItems.length) {
       cart.cartItems = filteredCart;
