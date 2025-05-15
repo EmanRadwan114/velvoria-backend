@@ -203,19 +203,9 @@ const getLeastOrderedProduct = async (req, res) => {
   try {
     const leastOrderedProducts = (
       await Product.find().sort({ orderCount: 1 })
-    ).slice(0, 10);
+    ).slice(0, 5);
 
-    if (!leastOrderedProducts)
-      return res.status(404).json({ message: "no products found" });
-
-    // * Randomly select  products
-    const randomLeastOrderedProducts = leastOrderedProducts.sort(
-      () => 0.5 - Math.random()
-    );
-
-    res
-      .status(200)
-      .json({ message: "success", data: randomLeastOrderedProducts });
+    res.status(200).json({ message: "success", data: leastOrderedProducts });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
