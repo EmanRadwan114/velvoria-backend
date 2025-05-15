@@ -175,7 +175,9 @@ const filterProducts = async (req, res) => {
 
       filterQuery.categoryID = catId;
     }
-
+    if (query.search) {
+      filterQuery.title = { $regex: query.search, $options: "i" };
+    }
     if (query.material) {
       const materialQuery = query.material.includes("-") ? query.material.split("-").join(" ") : query.material;
       filterQuery.material = { $regex: materialQuery, $options: "i" };

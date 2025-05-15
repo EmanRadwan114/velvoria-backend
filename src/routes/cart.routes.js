@@ -22,6 +22,9 @@ cartRouter
     cartControllers.clearCart(req, res, req.user.id);
   });
 
+cartRouter.get("/checkout",authenticate([systemRoles.user]),(req, res) => {
+  cartControllers.getCartForCheckout(req,res, req.user.id);
+})
 cartRouter
   .route("/:productId")
   .put(
