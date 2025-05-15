@@ -96,11 +96,8 @@ const updateCartItem = async (req, res, userID) => {
       return res.status(400).json({ message: "quantity must be at least 1" });
     }
 
-
-    const existingItem = cart.cartItems.find((item) => item.productId._id.toString() === productId);
-
     const existingItem = cart.cartItems.find(
-      (item) => item.productId.toString() === productId
+      (item) => item.productId._id.toString() === productId
     );
 
     if (!existingItem) {
@@ -132,11 +129,8 @@ const deleteCartItem = async (req, res, userID) => {
 
     let { productId } = req.params;
 
-
-    const existingItem = cart.cartItems.find((item) => item.productId._id.toString() === productId);
-
     const existingItem = cart.cartItems.find(
-      (item) => item.productId.toString() === productId
+      (item) => item.productId._id.toString() === productId
     );
 
     if (!existingItem) {
@@ -144,10 +138,8 @@ const deleteCartItem = async (req, res, userID) => {
     }
     //filter to remove item from cart
 
-    const filteredCart = cart.cartItems.filter((item) => item.productId._id.toString() !== productId);
-
     const filteredCart = cart.cartItems.filter(
-      (item) => item.productId.toString() !== productId
+      (item) => item.productId._id.toString() !== productId
     );
 
     if (filteredCart.length !== cart.cartItems.length) {
