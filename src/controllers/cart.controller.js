@@ -95,6 +95,7 @@ const updateCartItem = async (req, res, userID) => {
 
     const existingItem = cart.cartItems.find((item) => item.productId._id.toString() === productId);
 
+
     if (!existingItem) {
       return res.status(404).json({ message: "product not found in cart" });
     }
