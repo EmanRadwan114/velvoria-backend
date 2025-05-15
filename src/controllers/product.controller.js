@@ -28,12 +28,17 @@ const getProductById = async (req, res) => {
 
 const getProductsByCategory = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+    const skip = (page - 1) * limit;
+
     const category = await Category.findOne({
       name: { $regex: new RegExp(req.params.categoryName, "i") }, // 'i' for case-insensitive
-    }).sort({ createdAt: -1 });
+    });
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
+    const total = await Product.countDocuments({ categoryID: category._id });
     //populate to get data of category with products
     const products = await Product.find({ categoryID: category._id }).populate(
       "categoryID"
@@ -111,7 +116,9 @@ const deleteProduct = async (req, res) => {
 const searchProduct = async (req, res) => {
   try {
     let query = req.query.q.toLowerCase();
-
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+    const skip = (page - 1) * limit;
     if (query.includes("-")) {
       query = query.split("-").join(" ");
     }
@@ -149,7 +156,9 @@ const searchProduct = async (req, res) => {
 const filterProducts = async (req, res) => {
   try {
     const query = req.query;
-
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+    const skip = (page - 1) * limit;
     const filterQuery = {};
     if (query.category) {
       let catId = query.category;
@@ -182,10 +191,13 @@ const filterProducts = async (req, res) => {
     if (query.price) {
       filterQuery.price = { $lte: +query.price };
     }
-
-    const filteredProducts = await Product.find(filterQuery).sort({
-      createdAt: -1,
-    });
+    const total = await Product.countDocuments(filterQuery);
+    const filteredProducts = await Product.find(filterQuery)
+      .sort({
+        createdAt: -1,
+      })
+      .skip(skip)
+      .limit(limit);
 
     if (filteredProducts.length === 0)
       return res
@@ -198,7 +210,7 @@ const filterProducts = async (req, res) => {
   }
 };
 
-//^-----------------Get less ordered randomized products to put sale on --------------------
+//^-----------------Get least ordered products to put sale on --------------------
 const getLeastOrderedProduct = async (req, res) => {
   try {
     const leastOrderedProducts = (

@@ -14,9 +14,7 @@ export const createOrder = async (req, res) => {
 
   try {
     // 1. Get cart & check coupon
-    const cart = await Cart.findOne({ userID: req.user.id }).populate(
-      "cartItems.productId"
-    );
+    const cart = await Cart.findOne({ userID: req.user.id }).populate("cartItems.productId");
     if (!cart || cart.cartItems.length === 0) {
       return res.status(400).json({ message: "Your cart is empty" });
     }
@@ -28,9 +26,7 @@ export const createOrder = async (req, res) => {
         return res.status(400).json({ message: "coupon is not found" });
       }
       if (coupon.CouponUsers.includes(req.user.id)) {
-        return res
-          .status(400)
-          .json({ message: "you can not use this coupon more than one time " });
+        return res.status(400).json({ message: "you can not use this coupon more than one time " });
       }
     }
 
@@ -79,10 +75,7 @@ export const createOrder = async (req, res) => {
     // 7. Cash payment: record coupon use & clear cart immediately
     if (paymentMethod === "cash") {
       if (couponCode) {
-        await Coupon.updateOne(
-          { CouponCode: couponCode },
-          { $push: { CouponUsers: req.user.id } }
-        );
+        await Coupon.updateOne({ CouponCode: couponCode }, { $push: { CouponUsers: req.user.id } });
       }
 
       for (const item of cart.cartItems) {
@@ -97,9 +90,7 @@ export const createOrder = async (req, res) => {
       cart.cartItems = [];
       await cart.save();
 
-      return res
-        .status(201)
-        .json({ message: "Order placed successfully.", data: order });
+      return res.status(201).json({ message: "Order placed successfully.", data: order });
     }
 
     // 8. Online payment: create Stripe session
@@ -132,9 +123,7 @@ export const createOrder = async (req, res) => {
     }
   } catch (err) {
     console.error("Order creation error:", err);
-    return res
-      .status(500)
-      .json({ message: "Server error during order creation." });
+    return res.status(500).json({ message: "Server error during order creation." });
   }
 };
 
@@ -144,11 +133,7 @@ export const createWebhook = async (req, res) => {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error("Webhook error:", err);
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
@@ -167,11 +152,7 @@ export const createWebhook = async (req, res) => {
       const orderId = session.metadata.orderId;
 
       // 1. Update order status
-      const updatedOrder = await Order.findByIdAndUpdate(
-        orderId,
-        { orderStatus: "paid" },
-        { new: true }
-      );
+      const updatedOrder = await Order.findByIdAndUpdate(orderId, { orderStatus: "paid" }, { new: true });
 
       if (!updatedOrder) {
         return res.status(404).json({ error: "Order not found." });
@@ -179,10 +160,7 @@ export const createWebhook = async (req, res) => {
 
       // 2. Record coupon use
       if (coupon) {
-        await Coupon.updateOne(
-          { CouponCode: coupon },
-          { $push: { CouponUsers: updatedOrder.userID } }
-        );
+        await Coupon.updateOne({ CouponCode: coupon }, { $push: { CouponUsers: updatedOrder.userID } });
       }
 
       // 3. Decrement stock for each product in the order
@@ -209,9 +187,7 @@ export const createWebhook = async (req, res) => {
       });
     } catch (error) {
       console.error("Webhook processing error:", error);
-      return res
-        .status(500)
-        .json({ error: "Server Error: Error processing webhook" });
+      return res.status(500).json({ error: "Server Error: Error processing webhook" });
     }
   }
 
@@ -221,15 +197,17 @@ export const createWebhook = async (req, res) => {
 // ^---------------------------------GET All Orders--------------------------
 const getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
-      .populate("userID", "name email image")
-      .populate({
-        path: "orderItems.productId",
-        select: "title price thumbnail material color orderCount",
-      });
+    const page = parseInt(req.query.page) || 1; // default page 1
+    const limit = parseInt(req.query.limit) || 7; // default 7 items per page
+    const skip = (page - 1) * limit;
+    const total = await Order.countDocuments();
+    const totalPages = Math.ceil(total / limit);
+    const orders = await Order.find().skip(skip).limit(limit).populate("userID", "name email image").populate({
+      path: "orderItems.productId",
+      select: "title price thumbnail material color orderCount",
+    });
 
-    if (orders.length === 0)
-      return res.status(404).json({ message: "no orders found" });
+    if (orders.length === 0) return res.status(404).json({ message: "no orders found" });
 
     const allOrders = orders.map((order) => {
       const { userID, orderItems, ...rest } = order.toObject();
@@ -249,7 +227,7 @@ const getAllOrders = async (req, res) => {
       };
     });
 
-    res.status(200).json({ message: "success", data: allOrders });
+    res.status(200).json({ message: "success", data: allOrders, currentPage: page, totalPages });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -259,16 +237,18 @@ const getAllOrders = async (req, res) => {
 const getUserOrders = async (req, res) => {
   try {
     const userID = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 3;
+    const skip = (page - 1) * limit;
 
-    const orders = await Order.find({ userID })
-      .populate("userID", "name email image")
-      .populate({
-        path: "orderItems.productId",
-        select: "title price thumbnail material color orderCount",
-      });
+    const total = await Order.countDocuments({ userID });
+    const totalPages = Math.ceil(total / limit);
+    const orders = await Order.find({ userID }).skip(skip).limit(limit).populate("userID", "name email image").populate({
+      path: "orderItems.productId",
+      select: "title price thumbnail material color orderCount",
+    });
 
-    if (orders.length === 0)
-      return res.status(404).json({ message: "no orders found" });
+    if (orders.length === 0) return res.status(404).json({ message: "no orders found" });
 
     const allOrders = orders.map((order) => {
       const { userID, orderItems, ...rest } = order.toObject();
@@ -288,7 +268,7 @@ const getUserOrders = async (req, res) => {
       };
     });
 
-    res.status(200).json({ message: "success", data: allOrders });
+    res.status(200).json({ message: "success", data: allOrders, currentPage: page, totalPages });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -299,12 +279,10 @@ const getOrderByID = async (req, res) => {
   try {
     const orderID = req.params.id;
 
-    const order = await Order.findById(orderID)
-      .populate("userID", "name email image")
-      .populate({
-        path: "orderItems.productId",
-        select: "title price thumbnail material color orderCount",
-      });
+    const order = await Order.findById(orderID).populate("userID", "name email image").populate({
+      path: "orderItems.productId",
+      select: "title price thumbnail material color orderCount",
+    });
 
     if (!order) return res.status(404).json({ message: "order is not found" });
 
@@ -337,12 +315,10 @@ const updateOrderByID = async (req, res) => {
 
     const { shippingStatus } = req.body;
 
-    const order = await Order.findById(orderID)
-      .populate("userID", "name email image")
-      .populate({
-        path: "orderItems.productId",
-        select: "title price thumbnail material color orderCount",
-      });
+    const order = await Order.findById(orderID).populate("userID", "name email image").populate({
+      path: "orderItems.productId",
+      select: "title price thumbnail material color orderCount",
+    });
 
     if (!order) return res.status(404).json({ message: "order is not found" });
 
@@ -386,12 +362,10 @@ const deleteOrderByID = async (req, res) => {
   try {
     const orderID = req.params.id;
 
-    const order = await Order.findByIdAndDelete(orderID)
-      .populate("userID", "name email image")
-      .populate({
-        path: "orderItems.productId",
-        select: "title price thumbnail material color orderCount",
-      });
+    const order = await Order.findByIdAndDelete(orderID).populate("userID", "name email image").populate({
+      path: "orderItems.productId",
+      select: "title price thumbnail material color orderCount",
+    });
 
     if (!order) return res.status(404).json({ message: "order is not found" });
 
