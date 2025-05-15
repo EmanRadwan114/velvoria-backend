@@ -203,7 +203,12 @@ const getLeastOrderedProduct = async (req, res) => {
   try {
     const leastOrderedProducts = (
       await Product.find().sort({ orderCount: 1 })
-    ).slice(0, 5);
+    ).slice(0, 6);
+
+    if (leastOrderedProducts.length === 0)
+      return res
+        .status(404)
+        .json({ message: "no least ordered products found" });
 
     res.status(200).json({ message: "success", data: leastOrderedProducts });
   } catch (err) {
@@ -223,7 +228,7 @@ const getBestSellingProducts = async (req, res) => {
         .status(404)
         .json({ message: "no best selling products found" });
 
-    bestSellingProducts = bestSellingProducts.slice(0, 5);
+    bestSellingProducts = bestSellingProducts.slice(0, 6);
 
     res.status(200).json({ message: "success", data: bestSellingProducts });
   } catch (err) {
