@@ -3,9 +3,7 @@ import Coupon from "../../db/models/coupon.model.js";
 const addNewCoupon = async (req, res) => {
   try {
     let coupon = await Coupon.create(req.body);
-    res
-      .status(200)
-      .json({ message: "coupon added successfully", data: coupon });
+    res.status(200).json({ message: "coupon added successfully", data: coupon });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -13,11 +11,17 @@ const addNewCoupon = async (req, res) => {
 
 const getAllCoupons = async (req, res) => {
   try {
-    let coupons = await Coupon.find().sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1; // default page 1
+    const limit = parseInt(req.query.limit) || 6;
+    const skip = (page - 1) * limit;
+    const total = await Coupon.countDocuments();
+    const totalPages = Math.ceil(total / limit);
+
+    const coupons = await Coupon.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
     if (coupons.length === 0) {
       return res.status(404).json({ message: "no coupons found" });
     }
-    res.status(200).json({ message: "success", data: coupons });
+    res.status(200).json({ message: "success", data: coupons, currentPage: page, totalPages });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -46,9 +50,7 @@ const updateCoupon = async (req, res) => {
       coupon[key] = req.body[key];
     });
     await coupon.save();
-    res
-      .status(200)
-      .json({ message: "coupon updated successfully", data: coupon });
+    res.status(200).json({ message: "coupon updated successfully", data: coupon });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -85,9 +87,7 @@ const applyCoupon = async (req, res, userId) => {
     }
 
     if (coupon.CouponUsers.includes(userId)) {
-      return res
-        .status(400)
-        .json({ message: "Coupon already used by this user" });
+      return res.status(400).json({ message: "Coupon already used by this user" });
     }
 
     if (coupon.CouponUsers.length >= coupon.maxUsageLimit) {

@@ -41,6 +41,9 @@ const addProductToCart = async (req, res, userID) => {
 const getUserCart = async (req, res, userID) => {
   try {
     if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
+    const page = parseInt(req.query.page) || 1; // default page 1
+    const limit = parseInt(req.query.limit) || 3;
+    const skip = (page - 1) * limit;
     //get cart with product data
     let cart = await Cart.findOne({ userID }).populate({
       path: "cartItems.productId",
@@ -59,9 +62,14 @@ const getUserCart = async (req, res, userID) => {
       cart.cartItems = validCartItems;
       await cart.save();
     }
+    const paginatedItems = validCartItems.slice(skip, skip + limit);
+    const totalItems = validCartItems.length;
+    const totalPages = Math.ceil(totalItems / limit);
     res.status(200).json({
       message: "cart items returned successfully",
-      data: cart.cartItems,
+      currentPage: page,
+      totalPages,
+      data: paginatedItems,
     });
   } catch (err) {
     res.status(500).json({ message: "server error" });
