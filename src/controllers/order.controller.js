@@ -167,7 +167,7 @@ export const createWebhook = async (req, res) => {
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
 
-  if (event.type === "checkout.session.completed") {
+  if (event.type === "payment_intent.succeeded") {
     try {
       const session = event.data.object;
 
@@ -211,21 +211,22 @@ export const createWebhook = async (req, res) => {
 
       const user = await User.findById(updatedOrder.userID);
 
-      await sendEmail(
-        user.email,
-        "Your Order Confirmation",
-        orderDetailsHTMLContent,
-        {
-          cartItems: cart.cartItems,
-          totalPrice,
-          createdAt: updatedOrder.createdAt,
-          _id: updatedOrder._id,
-        }
-      );
-
       // 4. Empty cart
       const cart = await Cart.findOne({ userID: updatedOrder.userID });
+
       if (cart) {
+        await sendEmail(
+          user.email,
+          "Your Order Confirmation",
+          orderDetailsHTMLContent,
+          {
+            cartItems: cart.cartItems,
+            totalPrice: updatedOrder.totalPrice,
+            createdAt: updatedOrder.createdAt,
+            _id: updatedOrder._id,
+          }
+        );
+
         cart.cartItems = [];
         await cart.save();
       }
