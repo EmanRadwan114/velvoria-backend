@@ -8,7 +8,7 @@ const getAllProductReviews = async (req, res) => {
   try {
     const productID = req.params.id;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 5;
+    const limit = parseInt(req.query.limit) || 3;
     const skip = (page - 1) * limit;
 
     const total = await Review.countDocuments({ productID });
