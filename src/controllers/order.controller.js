@@ -209,6 +209,20 @@ export const createWebhook = async (req, res) => {
         }
       }
 
+      const user = await User.findById(updatedOrder.userID);
+
+      await sendEmail(
+        user.email,
+        "Your Order Confirmation",
+        orderDetailsHTMLContent,
+        {
+          cartItems: cart.cartItems,
+          totalPrice,
+          createdAt: updatedOrder.createdAt,
+          _id: updatedOrder._id,
+        }
+      );
+
       // 4. Empty cart
       const cart = await Cart.findOne({ userID: updatedOrder.userID });
       if (cart) {
