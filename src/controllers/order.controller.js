@@ -167,7 +167,7 @@ export const createWebhook = async (req, res) => {
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
 
-  if (event.type === "payment_intent.succeeded") {
+  if (event.type === "checkout.session.completed") {
     try {
       const session = event.data.object;
 
