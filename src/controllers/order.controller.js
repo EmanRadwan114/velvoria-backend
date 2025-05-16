@@ -212,7 +212,9 @@ export const createWebhook = async (req, res) => {
       const user = await User.findById(updatedOrder.userID);
 
       // 4. Empty cart
-      const cart = await Cart.findOne({ userID: updatedOrder.userID });
+      const cart = await Cart.findOne({ userID: updatedOrder.userID }).populate(
+        "cartItems.productId"
+      );
 
       if (cart) {
         await sendEmail(
