@@ -134,7 +134,6 @@ const signIn = async (req, res) => {
       httpOnly: true,
       sameSite: "none", // Change from "none" to "lax" for development
       secure: true, // Keep false for HTTP in development
-      domain: "velvoria.netlify.app", // Explicitly set domain
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
       path: "/", // Ensure cookie is available on all paths
     });
@@ -186,7 +185,6 @@ const logOut = async (req, res) => {
     httpOnly: true,
     sameSite: "none", // Change from "none" to "lax" for development
     secure: true, // Keep false for HTTP in development
-    domain: "velvoria.netlify.app", // Explicitly set domains
     maxAge: 10000,
     path: "/",
   });

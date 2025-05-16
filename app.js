@@ -31,6 +31,8 @@ app.post(
 // ^------------------global middlewares
 app.use(cookieParser());
 
+app.set("trust proxy", 1);
+
 app.use(
   cors({
     origin: process.env.FRONT_URL,
