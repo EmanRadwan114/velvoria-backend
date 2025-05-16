@@ -28,10 +28,17 @@ const addProductToCart = async (req, res, userID) => {
       cart.cartItems.push({ productId, quantity: 1 }); // add new product
     }
     await cart.save();
-
+    const totalItems = cart.cartItems.reduce((acc, item) => acc + item.quantity, 0);
+    const subtotal = cart.cartItems.reduce((acc, item) => {
+      const product = item.productId;
+      if (!product) return acc;
+      return acc + product.price * item.quantity;
+    }, 0);
     res.status(200).json({
       message: "product added to cart successfully",
       data: cart.cartItems,
+      totalItems,
+      subtotal,
     });
   } catch (err) {
     res.status(500).json({ message: "server error" });
@@ -62,14 +69,49 @@ const getUserCart = async (req, res, userID) => {
       cart.cartItems = validCartItems;
       await cart.save();
     }
+    const totalItems = validCartItems.reduce((acc, item) => acc + item.quantity, 0);
+    const subtotal = validCartItems.reduce((acc, item) => {
+      const product = item.productId;
+      if (!product) return acc;
+      return acc + product.price * item.quantity;
+    }, 0);
     const paginatedItems = validCartItems.slice(skip, skip + limit);
-    const totalItems = validCartItems.length;
-    const totalPages = Math.ceil(totalItems / limit);
+    const totalPages = Math.ceil(validCartItems.length / limit);
     res.status(200).json({
       message: "cart items returned successfully",
       currentPage: page,
       totalPages,
       data: paginatedItems,
+      totalItems,
+      subtotal,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+};
+const getCartForCheckout = async (req, res, userID) => {
+  try {
+    if (!userID) return res.status(401).json({ message: "you are not authorized to get this content" });
+    let cart = await Cart.findOne({ userID }).populate({
+      path: "cartItems.productId",
+      select: "title thumbnail price material color stock",
+    });
+
+    if (!cart) return res.status(404).json({ message: "no cart for user" });
+
+    //if product is out of stock will be removed
+    const validCartItems = cart.cartItems.filter((item) => {
+      const product = item.productId; //productId holds the product object
+      return product && product.stock > 0;
+    });
+    //to maintain any change
+    if (validCartItems.length !== cart.cartItems.length) {
+      cart.cartItems = validCartItems;
+      await cart.save();
+    }
+    res.status(200).json({
+      message: "cart items returned successfully",
+      data: cart.cartItems,
     });
   } catch (err) {
     res.status(500).json({ message: "server error" });
@@ -101,9 +143,17 @@ const updateCartItem = async (req, res, userID) => {
     }
     existingItem.quantity = quantity;
     await cart.save();
+    const totalItems = cart.cartItems.reduce((acc, item) => acc + item.quantity, 0);
+    const subtotal = cart.cartItems.reduce((acc, item) => {
+      const product = item.productId;
+      if (!product) return acc;
+      return acc + product.price * item.quantity;
+    }, 0);
     res.status(200).json({
       message: "product in cart items updated successfully",
       data: cart.cartItems,
+      totalItems,
+      subtotal,
     });
   } catch (err) {
     res.status(500).json({ message: "server error" });
@@ -135,9 +185,17 @@ const deleteCartItem = async (req, res, userID) => {
       cart.cartItems = filteredCart;
       await cart.save();
     }
+    const totalItems = cart.cartItems.reduce((acc, item) => acc + item.quantity, 0);
+    const subtotal = cart.cartItems.reduce((acc, item) => {
+      const product = item.productId;
+      if (!product) return acc;
+      return acc + product.price * item.quantity;
+    }, 0);
     res.status(200).json({
       message: "product in cart items removed successfully",
       data: cart.cartItems,
+      totalItems,
+      subtotal,
     });
   } catch (err) {
     res.status(500).json({ message: "server error" });
@@ -163,6 +221,7 @@ export default {
   addProductToCart,
   getAllCarts,
   getUserCart,
+  getCartForCheckout,
   updateCartItem,
   deleteCartItem,
   clearCart,
