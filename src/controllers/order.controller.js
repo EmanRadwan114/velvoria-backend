@@ -455,14 +455,6 @@ const deleteOrderByID = async (req, res) => {
   }
 };
 
-// ^----------------------------------GET Current Order--------------------------
-const getCurrentOrder = async (req, res) => {
-  try {
-  } catch (err) {
-    res.status(500).json({ message: "server error" });
-  }
-};
-
 //^-------------------------------Get Orders Data in Each Month--------------------------------
 const getOrdersByMonth = async (req, res) => {
   try {
@@ -522,7 +514,6 @@ export default {
   deleteOrderByID,
   createOrder,
   createWebhook,
-  getCurrentOrder,
   getOrdersByMonth,
   cancelOrder,
 };
