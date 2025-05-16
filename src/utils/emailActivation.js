@@ -1,4 +1,4 @@
-import sendEmail from "../utils/sendEmail.js";
+import sendEmail, { activateEmailHTMLContent } from "../utils/sendEmail.js";
 import generateToken from "./generateToken.js";
 
 //* Helper function for generating and sending activation email
@@ -14,7 +14,12 @@ const generateAndSendActivationEmail = async (user) => {
     const activationLink = `${process.env.BASE_URL}/auth/email-activation/${token}`;
 
     //* Send email with the links
-    await sendEmail(user.email, activationLink);
+    await sendEmail(
+      user.email,
+      "Email Activation",
+      activateEmailHTMLContent,
+      activationLink
+    );
   } catch (err) {
     console.error("Error sending activation email:", err);
     throw new Error("Failed to send activation email");

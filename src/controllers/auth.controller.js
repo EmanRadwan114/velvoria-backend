@@ -10,7 +10,8 @@ const RegisterUser = async (req, res) => {
     //* 1- check if email exists or not
     const { name, email, password } = req.body;
 
-    if (!email) return res.status(400).json({ message: "please provide user email" });
+    if (!email)
+      return res.status(400).json({ message: "please provide user email" });
 
     const user = await User.findOne({ email });
 
@@ -19,7 +20,10 @@ const RegisterUser = async (req, res) => {
     }
 
     //* 2- hashing password
-    const hashedPassword = await bcrypt.hash(password, +process.env.USER_PASS_SALT_ROUNDS);
+    const hashedPassword = await bcrypt.hash(
+      password,
+      +process.env.USER_PASS_SALT_ROUNDS
+    );
 
     //* 3- save in db
     const newUser = new User({ ...req.body, password: hashedPassword });
@@ -31,7 +35,8 @@ const RegisterUser = async (req, res) => {
 
     //* 6- send success msg
     res.status(201).json({
-      message: "user registered successfully. we have sent an email activation link to your email.",
+      message:
+        "user registered successfully. we have sent an email activation link to your email.",
       user: {
         id: newUser._id,
         name,
@@ -61,7 +66,10 @@ const emailActivation = async (req, res) => {
     //* 1- get token and verify it
     const { token } = req.params;
 
-    const decoded = verifyToken(token, process.env.EMAIL_ACTIVATION_TOKEN_SECRET_KEY);
+    const decoded = verifyToken(
+      token,
+      process.env.EMAIL_ACTIVATION_TOKEN_SECRET_KEY
+    );
 
     //* 2- get the user and activate their email
     const user = await User.findById({ _id: decoded.id });
@@ -71,7 +79,9 @@ const emailActivation = async (req, res) => {
       await user.save();
 
       //* 3- redirect user to the login form
-      return res.status(302).redirect(`${process.env.FRONT_URL}/login/${user.role}`);
+      return res
+        .status(302)
+        .redirect(`${process.env.FRONT_URL}/login/${user.role}`);
     } else if (user && user.isEmailActive) {
       return res.status(409).json({ message: "Email is already activated" });
     } else {
@@ -91,7 +101,8 @@ const signIn = async (req, res) => {
     //* 1- check if email exists or not
     const { email, password } = req.body;
 
-    if (!email) return res.status(400).json({ message: "please provide user email" });
+    if (!email)
+      return res.status(400).json({ message: "please provide user email" });
 
     const user = await User.findOne({ email });
 
@@ -101,23 +112,28 @@ const signIn = async (req, res) => {
 
     if (!user.isEmailActive)
       return res.status(400).json({
-        message: "your email is not active. you can activate it using the activation link sent to your email",
+        message:
+          "your email is not active. you can activate it using the activation link sent to your email",
       });
 
     //* 2- check if password is correct or not
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
-    if (!isPasswordCorrect) return res.status(401).json({ message: "incorrect password" });
+    if (!isPasswordCorrect)
+      return res.status(401).json({ message: "incorrect password" });
 
     //* 3- generate user token
-    const token = generateToken({ email: user.email, id: user._id, role: user.role }, process.env.USER_TOKEN_SECRET_KEY, "7d");
+    const token = generateToken(
+      { email: user.email, id: user._id, role: user.role },
+      process.env.USER_TOKEN_SECRET_KEY,
+      "7d"
+    );
 
     //* 4- send token in http-only cookie to prevent js access
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "lax", // Change from "none" to "lax" for development
-      secure: false, // Keep false for HTTP in development
-      domain: "localhost", // Explicitly set domain
+      sameSite: "none", // Change from "none" to "lax" for development
+      secure: true, // Keep false for HTTP in development
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
       path: "/", // Ensure cookie is available on all paths
     });
@@ -167,14 +183,15 @@ const logOut = async (req, res) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: false,
-    domain: "localhost",
+    sameSite: "none", // Change from "none" to "lax" for development
+    secure: true, // Keep false for HTTP in development
     maxAge: 10000,
     path: "/",
   });
 
-  res.status(200).json({ message: "user is logged out successfully", data: user });
+  res
+    .status(200)
+    .json({ message: "user is logged out successfully", data: user });
 };
 
 export default {
