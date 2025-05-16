@@ -320,7 +320,6 @@ const getUserOrders = async (req, res) => {
         orderItems: populatedOrderItems,
       };
     });
-<<<<<<< HEAD
 
     res.status(200).json({
       message: "success",
@@ -328,9 +327,6 @@ const getUserOrders = async (req, res) => {
       currentPage: page,
       totalPages,
     });
-=======
-    res.status(200).json({ message: "success", data: allOrders, currentPage: page, totalPages });
->>>>>>> bcfdc5c4cbf70297af59c3da7cf66a3c9c4cfea2
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
