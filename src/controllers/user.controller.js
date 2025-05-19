@@ -160,8 +160,10 @@ const deleteUser = async (req, res, userID) => {
 
       res.cookie("token", token, {
         httpOnly: true,
-        // secure: process.env.NODE_ENV === 'production',
-        expires: new Date(Date.now() + 3 * 1000), //? expires in 3 seconds
+        sameSite: "none", // Change from "none" to "lax" for development
+        secure: true, // Keep false for HTTP in development
+        maxAge: 10000,
+        path: "/",
       });
     }
 
@@ -203,14 +205,12 @@ const getAllUserReviews = async (req, userID, res) => {
       };
     });
 
-    res
-      .status(200)
-      .json({
-        message: "success",
-        data: userReviews,
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-      });
+    res.status(200).json({
+      message: "success",
+      data: userReviews,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
