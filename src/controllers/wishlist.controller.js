@@ -19,7 +19,9 @@ const addToWishList = async (req, res) => {
     user.wishlist.push(pid);
     await user.save();
 
-    res.status(200).json({ message: "Product added to wishlist", wishlist: user.wishlist });
+    res
+      .status(200)
+      .json({ message: "Product added to wishlist", wishlist: user.wishlist });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
@@ -40,7 +42,11 @@ const getWishList = async (req, res) => {
     } else {
       productsWishList = user.wishlist.slice(skip, skip + limit);
     }
-    res.status(200).json({ wishlist: productsWishList, currentPage: page, totalPages: Math.ceil(total / limit) });
+    res.status(200).json({
+      wishlist: productsWishList,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message, error });
   }
@@ -60,10 +66,35 @@ const deleteFromWishList = async (req, res) => {
 
     await user.save();
 
-    return res.status(200).json({ message: "Removed from wishlist", wishlist: user.wishlist });
+    return res
+      .status(200)
+      .json({ message: "Removed from wishlist", wishlist: user.wishlist });
   } catch (error) {
     console.error("❌ Wishlist Deletion Error:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
+  }
+};
+
+const clearWishlist = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.wishlist = [];
+
+    await user.save();
+
+    return res.status(200).json({ message: "success" });
+  } catch (error) {
+    console.error("❌ Wishlist Deletion Error:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
 
@@ -71,4 +102,5 @@ export default {
   addToWishList,
   getWishList,
   deleteFromWishList,
+  clearWishlist,
 };

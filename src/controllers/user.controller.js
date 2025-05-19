@@ -122,7 +122,7 @@ const updateUser = async (req, res, userID) => {
       generateAndSendActivationEmail(user);
       return res
         .status(302)
-        .redirect(`${process.env.FRONT_URL}/login/${user.role}`);
+        .redirect(`${process.env.FRONT_URL}/login`);
     }
 
     await user.save();

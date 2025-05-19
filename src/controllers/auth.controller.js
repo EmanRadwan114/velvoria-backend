@@ -79,9 +79,7 @@ const emailActivation = async (req, res) => {
       await user.save();
 
       //* 3- redirect user to the login form
-      return res
-        .status(302)
-        .redirect(`${process.env.FRONT_URL}/login/${user.role}`);
+      return res.status(302).redirect(`${process.env.FRONT_URL}/login`);
     } else if (user && user.isEmailActive) {
       return res.status(409).json({ message: "Email is already activated" });
     } else {
