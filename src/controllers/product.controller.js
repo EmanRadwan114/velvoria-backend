@@ -7,14 +7,15 @@ const getAllProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 6;
     const skip = (page - 1) * limit;
-
+    const all = req.query.all || false;
     const total = await Product.countDocuments();
     const totalPages = Math.ceil(total / limit);
-
-    let products = await Product.find()
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    let products;
+    if (all) {
+      products = await Product.find().sort({ createdAt: -1 });
+    } else {
+      products = await Product.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
+    }
     if (products.length === 0) {
       res.status(404).json({ message: "no products found" });
     }
@@ -55,9 +56,7 @@ const getProductsByCategory = async (req, res) => {
     }
     const total = await Product.countDocuments({ categoryID: category._id });
     //populate to get data of category with products
-    const products = await Product.find({ categoryID: category._id }).populate(
-      "categoryID"
-    );
+    const products = await Product.find({ categoryID: category._id }).populate("categoryID");
     if (products.length === 0) {
       res.status(404).json({ message: "no products found" });
     }
@@ -88,9 +87,7 @@ const getProductsByLabel = async (req, res) => {
 const addNewProduct = async (req, res) => {
   try {
     let product = await Product.create(req.body);
-    res
-      .status(200)
-      .json({ message: "product added successfully", data: product });
+    res.status(200).json({ message: "product added successfully", data: product });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -107,9 +104,7 @@ const updateProduct = async (req, res) => {
       product[key] = req.body[key];
     });
     await product.save();
-    res
-      .status(200)
-      .json({ message: "product updated successfully", data: product });
+    res.status(200).json({ message: "product updated successfully", data: product });
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -152,14 +147,9 @@ const searchProduct = async (req, res) => {
       ],
     }));
 
-    const searchedProducts = await Product.find({ $or: searchQuery })
-      .populate("categoryID")
-      .sort({ createdAt: -1 });
+    const searchedProducts = await Product.find({ $or: searchQuery }).populate("categoryID").sort({ createdAt: -1 });
 
-    if (searchedProducts.length === 0)
-      return res
-        .status(404)
-        .json({ message: "no products found that match your search" });
+    if (searchedProducts.length === 0) return res.status(404).json({ message: "no products found that match your search" });
 
     res.status(200).json({ message: "success", data: searchedProducts });
   } catch (err) {
@@ -195,9 +185,7 @@ const filterProducts = async (req, res) => {
       filterQuery.title = { $regex: query.search, $options: "i" };
     }
     if (query.material) {
-      const materialQuery = query.material.includes("-")
-        ? query.material.split("-").join(" ")
-        : query.material;
+      const materialQuery = query.material.includes("-") ? query.material.split("-").join(" ") : query.material;
       filterQuery.material = { $regex: materialQuery, $options: "i" };
     }
 
@@ -216,10 +204,7 @@ const filterProducts = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    if (filteredProducts.length === 0)
-      return res
-        .status(404)
-        .json({ message: "no products found that match your filteration" });
+    if (filteredProducts.length === 0) return res.status(404).json({ message: "no products found that match your filteration" });
 
     res.status(200).json({ message: "success", data: filteredProducts });
   } catch (err) {
@@ -230,14 +215,9 @@ const filterProducts = async (req, res) => {
 //^-----------------Get least ordered products to put sale on --------------------
 const getLeastOrderedProduct = async (req, res) => {
   try {
-    const leastOrderedProducts = (
-      await Product.find().sort({ orderCount: 1 })
-    ).slice(0, 6);
+    const leastOrderedProducts = (await Product.find().sort({ orderCount: 1 })).slice(0, 6);
 
-    if (leastOrderedProducts.length === 0)
-      return res
-        .status(404)
-        .json({ message: "no least ordered products found" });
+    if (leastOrderedProducts.length === 0) return res.status(404).json({ message: "no least ordered products found" });
 
     res.status(200).json({ message: "success", data: leastOrderedProducts });
   } catch (err) {
@@ -252,10 +232,7 @@ const getBestSellingProducts = async (req, res) => {
       orderCount: -1,
     });
 
-    if (bestSellingProducts.length === 0)
-      return res
-        .status(404)
-        .json({ message: "no best selling products found" });
+    if (bestSellingProducts.length === 0) return res.status(404).json({ message: "no best selling products found" });
 
     bestSellingProducts = bestSellingProducts.slice(0, 6);
 

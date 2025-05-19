@@ -30,14 +30,19 @@ const getWishList = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 8;
     const skip = (page - 1) * limit;
-
+    const all = req.query.all || false;
     const user = await User.findById(req.user.id).populate("wishlist");
     if (!user) return res.status(404).json({ message: "User not found" });
-    const total = user.wishlist.length;
-    const paginatedWishlist = user.wishlist.slice(skip, skip + limit);
-    res.status(200).json({ wishlist: paginatedWishlist, currentPage: page, totalPages: Math.ceil(total / limit) });
+    let productsWishList;
+    let total = user.wishlist.length;
+    if (all) {
+      productsWishList = user.wishlist;
+    } else {
+      productsWishList = user.wishlist.slice(skip, skip + limit);
+    }
+    res.status(200).json({ wishlist: productsWishList, currentPage: page, totalPages: Math.ceil(total / limit) });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: error.message, error });
   }
 };
 
