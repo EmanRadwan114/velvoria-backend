@@ -115,14 +115,17 @@ const updateUser = async (req, res, userID) => {
     }
 
     // * change email
+    const isEmailExists = await User.find({ email });
+
+    if (isEmailExists)
+      return res.status(409).json({ message: "this email already exists" });
+
     if (email && email !== user.email) {
       user.email = email;
       user.isEmailActive = false;
       await user.save(); //? save before redirecting
       generateAndSendActivationEmail(user);
-      return res
-        .status(302)
-        .redirect(`${process.env.FRONT_URL}/login`);
+      return res.status(302).redirect(`${process.env.FRONT_URL}/login`);
     }
 
     await user.save();
