@@ -115,7 +115,7 @@ const updateUser = async (req, res, userID) => {
     }
 
     // * change email
-    const isEmailExists = await User.find({ email });
+    const isEmailExists = await User.findOne({ email });
 
     if (isEmailExists)
       return res.status(409).json({ message: "this email already exists" });
