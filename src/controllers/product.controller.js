@@ -138,8 +138,6 @@ const searchProduct = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 6;
     const skip = (page - 1) * limit;
-    const total = await Product.countDocuments();
-    const totalPages = Math.ceil(total / limit);
 
     if (query.includes("-")) {
       query = query.split("-").join(" ");
@@ -159,7 +157,10 @@ const searchProduct = async (req, res) => {
       ],
     }));
 
-    const searchedProducts = await Product.find({ $or: searchQuery })
+    const total = await Product.countDocuments(searchQuery);
+    const totalPages = Math.ceil(total / limit);
+
+    const searchedProducts = await Product.find({ searchQuery })
       .populate("categoryID")
       .sort({ createdAt: -1 })
       .limit(limit)
@@ -177,6 +178,8 @@ const searchProduct = async (req, res) => {
       totalPages,
     });
   } catch (err) {
+    console.log(err);
+
     res.status(500).json({ message: "server error" });
   }
 };
