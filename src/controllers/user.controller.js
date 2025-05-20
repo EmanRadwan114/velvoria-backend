@@ -25,7 +25,7 @@ const getAllUsers = async (req, res) => {
     const users = await User.find(filter)
       .skip(skip)
       .limit(limit)
-      .select("name email role wishlist image address")
+      .select("name email role wishlist image address isEmailActive")
       .sort({ createdAt: -1 });
 
     if (users.length === 0) {
