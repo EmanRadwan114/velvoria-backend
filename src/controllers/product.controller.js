@@ -157,10 +157,10 @@ const searchProduct = async (req, res) => {
       ],
     }));
 
-    const total = await Product.countDocuments(searchQuery);
+    const total = await Product.countDocuments({ $or: searchQuery });
     const totalPages = Math.ceil(total / limit);
 
-    const searchedProducts = await Product.find({ searchQuery })
+    const searchedProducts = await Product.find({ $or: searchQuery })
       .populate("categoryID")
       .sort({ createdAt: -1 })
       .limit(limit)
