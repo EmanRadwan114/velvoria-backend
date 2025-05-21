@@ -124,7 +124,21 @@ const updateUser = async (req, res, userID) => {
       user.email = email;
       user.isEmailActive = false;
       await user.save(); //? save before redirecting
-      generateAndSendActivationEmail(user);
+      //* 3- generate user token
+      const token = generateToken(
+        { email: user.email, id: user._id, role: user.role },
+        process.env.USER_TOKEN_SECRET_KEY,
+        "7d"
+      );
+
+      //* 4- send token in http-only cookie to prevent js access
+      res.cookie("token", token, {
+        httpOnly: true,
+        sameSite: "none", // Change from "none" to "lax" for development
+        secure: true, // Keep false for HTTP in development
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+        path: "/", // Ensure cookie is available on all paths
+      });
     }
 
     await user.save();
