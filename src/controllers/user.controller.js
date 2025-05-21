@@ -114,13 +114,13 @@ const updateUser = async (req, res, userID) => {
       user.address.push(address);
     }
 
-    // * change email
-    const isEmailExists = await User.findOne({ email });
-
-    if (isEmailExists)
-      return res.status(409).json({ message: "this email already exists" });
-
     if (email && email !== user.email) {
+      // * change email
+      const isEmailExists = await User.findOne({ email });
+
+      if (isEmailExists)
+        return res.status(409).json({ message: "this email already exists" });
+
       user.email = email;
       user.isEmailActive = false;
       await user.save(); //? save before redirecting
