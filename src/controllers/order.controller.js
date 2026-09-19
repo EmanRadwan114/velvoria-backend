@@ -257,6 +257,7 @@ const getAllOrders = async (req, res) => {
     const total = await Order.countDocuments();
     const totalPages = Math.ceil(total / limit);
     const orders = await Order.find()
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("userID", "name email image")

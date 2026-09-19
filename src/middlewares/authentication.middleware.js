@@ -36,7 +36,7 @@ const authenticate = (roles = []) => {
         }
 
         //* 3- Redirect user to login page based on their role
-        return res.redirect(`${process.env.FRONT_URL}/login/${decoded?.role}`);
+        return res.redirect(`${process.env.FRONT_URL}/login`);
       } else {
         //* 4- If token is invalid for any other reason
         return res.status(401).json({ message: "Invalid token" });
