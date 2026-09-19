@@ -7,7 +7,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon app.js",
-    "start": "node app.js"
+    "start": "node app.js",
+    "seed": "node seeds/run-seed.js"
   },
   "keywords": [
     "furniture",
@@ -19,6 +20,7 @@
     "ajv": "^8.17.1",
     "ajv-errors": "^3.0.0",
     "ajv-formats": "^3.0.1",
+    "axios": "^1.20.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

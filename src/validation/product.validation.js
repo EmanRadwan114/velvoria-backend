@@ -8,7 +8,14 @@ ajvFormats(ajv);
 
 const addProductSchema = {
   type: "object",
-  required: ["categoryID", "title", "description", "thumbnail", "stock", "price"],
+  required: [
+    "categoryID",
+    "title",
+    "description",
+    "thumbnail",
+    "stock",
+    "price",
+  ],
   properties: {
     categoryID: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
     title: { type: "string", minLength: 4 },
@@ -44,7 +51,8 @@ const addProductSchema = {
       color: "color must be a string",
       avgRating: "average rating must be a number between 0 and 5",
       numberOfReviews: "number of reviews must be a non-negative number",
-      label: "label must be an array containing 'hot', 'trendy', or 'new arrival'",
+      label:
+        "label must be an array containing 'hot', 'trendy', or 'new arrival'",
       orderCount: "order count must be a non-negative number",
     },
     additionalProperties: "unexpected extra property in request body",
@@ -87,7 +95,8 @@ const updateProductSchema = {
       color: "color must be a string",
       avgRating: "average rating must be a number between 0 and 5",
       numberOfReviews: "number of reviews must be a non-negative number",
-      label: "label must be an array containing 'hot', 'trendy', or 'new arrival'",
+      label:
+        "label must be an array containing 'hot', 'trendy', or 'new arrival'",
       orderCount: "order count must be a non-negative number",
     },
     additionalProperties: "unexpected extra property in request body",
