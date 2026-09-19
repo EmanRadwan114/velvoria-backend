@@ -1,4 +1,4 @@
-import { createTransport } from "nodemailer";
+import axios from "axios";
 
 //* HTML content
 export const activateEmailHTMLContent = (activationLink) => `<!DOCTYPE html>
@@ -197,26 +197,47 @@ export const orderDetailsHTMLContent = (order) => {
 `;
 };
 
-//* create nodemailer transporter
-const transporter = createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.USER_NODE_MAILER_EMAIL,
-    pass: process.env.USER_APP_NODE_MAILER_PASS,
-  },
-});
-
+//* send email function using Brevo HTTPS REST API (Port 443 - never blocked by cloud firewalls)
 const sendEmail = async (to, subject, HTMLContent, data) => {
   try {
-    await transporter.sendMail({
-      from: `"VELVORIA" <${process.env.USER_NODE_MAILER_EMAIL}>`,
-      to: to || process.env.USER_NODE_MAILER_EMAIL,
-      subject: subject,
-      html: typeof HTMLContent === "function" ? HTMLContent(data) : HTMLContent,
-    });
+    const html =
+      typeof HTMLContent === "function" ? HTMLContent(data) : HTMLContent;
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL ||
+      process.env.USER_NODE_MAILER_EMAIL ||
+      "wppractic@gmail.com";
+    const recipientEmail = to || senderEmail;
+
+    await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          name: "VELVORIA",
+          email: senderEmail,
+        },
+        to: [
+          {
+            email: recipientEmail,
+          },
+        ],
+        subject: subject,
+        htmlContent: html,
+      },
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "content-type": "application/json",
+          accept: "application/json",
+        },
+      }
+    );
+
     return true;
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error(
+      "Error sending email via Brevo API:",
+      error.response ? error.response.data : error.message
+    );
     throw error; // Re-throw the error for handling at a higher level
   }
 };
