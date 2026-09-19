@@ -1,4 +1,3 @@
-import axios from "axios";
 
 //* HTML content
 export const activateEmailHTMLContent = (activationLink) => `<!DOCTYPE html>
@@ -208,9 +207,14 @@ const sendEmail = async (to, subject, HTMLContent, data) => {
       "wppractic@gmail.com";
     const recipientEmail = to || senderEmail;
 
-    await axios.post(
-      "https://api.brevo.com/v3/smtp/email",
-      {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": process.env.BREVO_API_KEY,
+        "content-type": "application/json",
+        accept: "application/json",
+      },
+      body: JSON.stringify({
         sender: {
           name: "VELVORIA",
           email: senderEmail,
@@ -222,22 +226,19 @@ const sendEmail = async (to, subject, HTMLContent, data) => {
         ],
         subject: subject,
         htmlContent: html,
-      },
-      {
-        headers: {
-          "api-key": process.env.BREVO_API_KEY,
-          "content-type": "application/json",
-          accept: "application/json",
-        },
-      }
-    );
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        `Brevo API error (${response.status}): ${JSON.stringify(errorData)}`
+      );
+    }
 
     return true;
   } catch (error) {
-    console.error(
-      "Error sending email via Brevo API:",
-      error.response ? error.response.data : error.message
-    );
+    console.error("Error sending email via Brevo API:", error.message || error);
     throw error; // Re-throw the error for handling at a higher level
   }
 };
