@@ -128,7 +128,7 @@ export const createOrder = async (req, res) => {
             orderId: order._id.toString(),
             couponCode: couponCode || "",
           },
-          success_url: `${process.env.FRONT_URL}/orders/${order._id}`,
+          success_url: `${process.env.FRONT_URL}/orders/${order._id}?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${process.env.FRONT_URL}/cart`,
         });
       } catch (stripeErr) {
@@ -524,6 +524,98 @@ const getOrdersByMonth = async (req, res) => {
 // ^----------------------------------Cancel Order--------------------------
 const cancelOrder = async (req, res) => {}; //additional feature
 
+//^ ------------------------------------------ verify online payment & clear cart ------------------------------------------
+export const verifyPayment = async (req, res) => {
+  const { sessionId } = req.body;
+
+  if (!sessionId) {
+    return res.status(400).json({ message: "sessionId is required" });
+  }
+
+  try {
+    // 1. Retrieve the session from Stripe
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== "paid") {
+      return res.status(402).json({ message: "Payment not completed" });
+    }
+
+    const orderId = session.metadata?.orderId;
+    const couponCode = session.metadata?.couponCode;
+
+    if (!orderId) {
+      return res.status(400).json({ message: "Missing orderId in session metadata" });
+    }
+
+    // 2. Update order status to paid (idempotent — safe to call multiple times)
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { orderStatus: "paid" },
+      { new: true }
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // 3. Record coupon use (only if not already recorded)
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ CouponCode: couponCode });
+      if (coupon && !coupon.CouponUsers.includes(updatedOrder.userID.toString())) {
+        await Coupon.updateOne(
+          { CouponCode: couponCode },
+          { $push: { CouponUsers: updatedOrder.userID } }
+        );
+      }
+    }
+
+    // 4. Decrement stock (only if order was just marked paid for the first time)
+    if (updatedOrder.orderStatus === "paid" && !updatedOrder.stockDecremented) {
+      for (const orderItem of updatedOrder.orderItems) {
+        const product = await Product.findById(orderItem.productId);
+        if (product && product.stock > 0) {
+          product.stock -= orderItem.quantity;
+          product.orderCount++;
+          await product.save();
+        }
+      }
+      await Order.findByIdAndUpdate(orderId, { stockDecremented: true });
+    }
+
+    // 5. Clear the cart
+    const cart = await Cart.findOne({ userID: updatedOrder.userID }).populate(
+      "cartItems.productId"
+    );
+
+    if (cart && cart.cartItems.length > 0) {
+      const user = await User.findById(updatedOrder.userID);
+
+      await sendEmail(
+        user.email,
+        "Your Order Confirmation",
+        orderDetailsHTMLContent,
+        {
+          cartItems: cart.cartItems,
+          totalPrice: updatedOrder.totalPrice,
+          createdAt: updatedOrder.createdAt,
+          _id: updatedOrder._id,
+        }
+      );
+
+      cart.cartItems = [];
+      await cart.save();
+    }
+
+    return res.status(200).json({
+      message: "Payment verified and cart cleared.",
+      data: updatedOrder,
+    });
+  } catch (err) {
+    console.error("verifyPayment error:", err);
+    return res.status(500).json({ message: "Server error during payment verification." });
+  }
+};
+
 export default {
   getAllOrders,
   getUserOrders,
@@ -532,6 +624,7 @@ export default {
   deleteOrderByID,
   createOrder,
   createWebhook,
+  verifyPayment,
   getOrdersByMonth,
   cancelOrder,
 };
