@@ -33,6 +33,13 @@ orderRouter.get(
   orderControllers.getOrdersByMonth
 );
 
+// ^----------------------------------Verify Online Payment & Clear Cart--------------------------
+orderRouter.post(
+  "/verify-payment",
+  authenticate([systemRoles.user]),
+  orderControllers.verifyPayment
+);
+
 // ^----------------------------------GET, PUT & DELETE Order By ID--------------------------
 orderRouter
   .route("/:id")
