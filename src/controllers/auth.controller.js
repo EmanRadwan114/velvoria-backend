@@ -22,7 +22,7 @@ const RegisterUser = async (req, res) => {
     //* 2- hashing password
     const hashedPassword = await bcrypt.hash(
       password,
-      +process.env.USER_PASS_SALT_ROUNDS
+      +process.env.USER_PASS_SALT_ROUNDS,
     );
 
     //* 3- save in db
@@ -68,7 +68,7 @@ const emailActivation = async (req, res) => {
 
     const decoded = verifyToken(
       token,
-      process.env.EMAIL_ACTIVATION_TOKEN_SECRET_KEY
+      process.env.EMAIL_ACTIVATION_TOKEN_SECRET_KEY,
     );
 
     //* 2- get the user and activate their email
@@ -79,7 +79,7 @@ const emailActivation = async (req, res) => {
       await user.save();
 
       //* 3- redirect user to the login form
-      return res.status(302).redirect(${process.env.FRONT_URL}/login);
+      return res.status(302).redirect(`${process.env.FRONT_URL}/login`);
     } else if (user && user.isEmailActive) {
       return res.status(409).json({ message: "Email is already activated" });
     } else {
@@ -124,7 +124,7 @@ const signIn = async (req, res) => {
     const token = generateToken(
       { email: user.email, id: user._id, role: user.role },
       process.env.USER_TOKEN_SECRET_KEY,
-      "7d"
+      "7d",
     );
 
     //* 4- send token in http-only cookie to prevent js access
