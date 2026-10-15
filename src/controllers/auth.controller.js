@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+﻿import bcrypt from "bcrypt";
 import User from "../../db/models/user.model.js";
 import generateToken from "../utils/generateToken.js";
 import verifyToken from "../utils/verifyToken.js";
@@ -79,7 +79,7 @@ const emailActivation = async (req, res) => {
       await user.save();
 
       //* 3- redirect user to the login form
-      return res.status(302).redirect(`${process.env.FRONT_URL}/login`);
+      return res.status(302).redirect(${process.env.FRONT_URL}/login);
     } else if (user && user.isEmailActive) {
       return res.status(409).json({ message: "Email is already activated" });
     } else {
@@ -169,27 +169,16 @@ const resetPassword = (req, res) => {}; //additional feature
 
 // ^----------------------------------LogOut--------------------------
 const logOut = async (req, res) => {
-  const id = req.user.id;
-
-  const user = await User.findById(id).select("name email role");
-
-  const token = generateToken(
-    { email: user.email, id: user._id, role: user.role },
-    process.env.USER_TOKEN_SECRET_KEY,
-    "10s" // Token expires in 10 seconds
-  );
-
-  res.cookie("token", token, {
+  // BUG FIX: clear the cookie instead of replacing it with a short-lived token.
+  // Options must exactly match those used in signIn to ensure the browser removes it.
+  res.clearCookie("token", {
     httpOnly: true,
-    sameSite: "none", // Change from "none" to "lax" for development
-    secure: true, // Keep false for HTTP in development
-    maxAge: 10000,
+    sameSite: "none",
+    secure: true,
     path: "/",
   });
 
-  res
-    .status(200)
-    .json({ message: "user is logged out successfully", data: user });
+  res.status(200).json({ message: "user is logged out successfully" });
 };
 
 export default {
